@@ -1,2 +1,10 @@
 *.local
 *.local.*
+
+.pnpm-store/
+artifacts/
+coverage/
+dist/
+node_modules/
+.vscode/
+.vscode-test/
