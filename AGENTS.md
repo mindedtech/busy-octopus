@@ -6,6 +6,7 @@ These rules apply to the entire repository.
 
 - Preserve user work and avoid unrelated changes.
 - **Never create or amend a Git commit unless the user's current message explicitly instructs you to commit.** Requests to implement work, complete a numbered step, prepare a commit, follow a commit plan, or continue after discussing commits do not authorize a commit. After implementing and validating changes, stop with the work uncommitted unless that immediate instruction is present.
+- **Never create an unsigned Git commit or bypass commit signing.** If signing fails or the signing key is unavailable, check whether `.env.local` defines `GH_TOKEN` without reading, printing, or logging its value, and use it only through a workflow that still creates a signed commit. If no signed path is available, stop and report the failure without creating the commit.
 - Never rewrite Git history or run destructive Git commands unless the user explicitly requests the exact operation.
 - Commits on an unmerged pull request branch remain rewriteable even when pushed. Keep recommendations about commit structure separate from permission to amend, rebase, force-push, or otherwise mutate Git history.
 - Inspect with read-only commands before acting when scope or impact is uncertain.
