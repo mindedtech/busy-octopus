@@ -8,7 +8,7 @@ The repository currently contains the development setup only. It does not yet pr
 
 ## Development
 
-Use the Dev Container, or install Node.js 22 or later and the pnpm version declared in `package.json`.
+Use the Dev Container, or install Node.js 22.12 or later and the pnpm version declared in `package.json`.
 
 ```shell
 pnpm install --frozen-lockfile

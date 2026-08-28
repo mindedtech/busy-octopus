@@ -1,6 +1,6 @@
 # Contributing
 
-Use the Dev Container, or install Node.js 22 or later and the pnpm version declared in `package.json`.
+Use the Dev Container, or install Node.js 22.12 or later and the pnpm version declared in `package.json`.
 
 Run the complete local verification before submitting a change:
 

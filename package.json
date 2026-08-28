@@ -6,7 +6,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12.0"
   },
   "packageManager": "pnpm@11.24.0",
   "repository": {
@@ -14,12 +14,15 @@
     "url": "git+https://github.com/mindedtech/busy-octopus.git"
   },
   "scripts": {
-    "check": "biome check .",
+    "check": "pnpm check:biome && pnpm check:knip",
+    "check:biome": "biome check .",
     "check:fix": "biome check --write .",
+    "check:knip": "knip",
     "format": "biome format --write .",
     "verify": "pnpm check"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.10"
+    "@biomejs/biome": "2.5.10",
+    "knip": "6.32.3"
   }
 }
