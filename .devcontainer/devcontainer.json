@@ -1,0 +1,66 @@
+{
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Anthropic.claude-code",
+        "biomejs.biome",
+        "github.vscode-github-actions",
+        "openai.chatgpt",
+        "redhat.vscode-yaml",
+        "TypeScriptTeam.native-preview",
+        "timonwong.shellcheck"
+      ],
+      "settings": {
+        "[javascript][javascriptreact][json][jsonc][typescript][typescriptreact]": {
+          "editor.defaultFormatter": "biomejs.biome",
+          "editor.formatOnSave": true
+        },
+        "editor.codeActionsOnSave": {
+          "source.fixAll.biome": "explicit",
+          "source.organizeImports.biome": "explicit"
+        },
+        "files.exclude": {
+          ".pnpm-store": true
+        },
+        "files.watcherExclude": {
+          "**/.git/**": true,
+          "**/.pnpm-store/**": true,
+          "**/artifacts/**": true,
+          "**/dist/**": true,
+          "**/node_modules/**": true
+        },
+        "git.detectWorktrees": true,
+        "js/ts.experimental.useTsgo": true,
+        "js/ts.format.enabled": false,
+        "js/ts.preferences.preferTypeOnlyAutoImports": true,
+        "js/ts.tsc.autoDetect": "off",
+        "js/ts.tsdk.path": "node_modules/typescript/lib",
+        "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+        "js/ts.updateImportsOnFileMove.enabled": "always",
+        "scm.defaultViewMode": "tree",
+        "search.exclude": {
+          "**/.git/**": true,
+          "**/.pnpm-store/**": true,
+          "**/artifacts/**": true,
+          "**/dist/**": true,
+          "**/node_modules/**": true
+        },
+        "window.title": "${dirty}${activeRepositoryBranchName}"
+      }
+    }
+  },
+  "dockerComposeFile": ["compose.yml", "compose.worktree.gen.local.yml"],
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1.1.1": {
+      "version": "2.97.0"
+    }
+  },
+  "initializeCommand": ".devcontainer/initializeCommand.sh",
+  "name": "Busy Octopus (${localWorkspaceFolderBasename})",
+  "postCreateCommand": "/workspace/.devcontainer/postCreateCommand.sh",
+  "remoteUser": "node",
+  "service": "busy-octopus",
+  "shutdownAction": "stopCompose",
+  "updateRemoteUserUID": true,
+  "workspaceFolder": "/workspace"
+}
