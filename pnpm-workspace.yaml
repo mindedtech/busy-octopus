@@ -1,0 +1,6 @@
+engineStrict: true
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+preferSymlinkedExecutables: true
+saveExact: true
+strictDepBuilds: true

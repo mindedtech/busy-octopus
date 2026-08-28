@@ -1,0 +1,25 @@
+{
+  "name": "@mindedtech/busy-octopus",
+  "version": "0.0.0",
+  "description": "Local desktop notifications from native workspaces, WSL, and Dev Containers",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@11.24.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mindedtech/busy-octopus.git"
+  },
+  "scripts": {
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "verify": "pnpm check"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.10"
+  }
+}
