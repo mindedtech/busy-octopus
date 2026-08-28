@@ -1,7 +1,7 @@
 {
   "name": "@mindedtech/busy-octopus",
   "version": "0.0.0",
-  "description": "Local desktop notifications from native workspaces, WSL, and Dev Containers",
+  "description": "VS Code extension to notify you when an agent or workspace needs attention",
   "license": "MIT",
   "private": true,
   "type": "module",
