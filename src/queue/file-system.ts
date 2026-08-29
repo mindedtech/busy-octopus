@@ -16,6 +16,20 @@ export class QueueFileTooLargeError extends Error {
  * Provide bounded storage operations with atomic ownership transitions.
  */
 export type QueueFileSystem<Resource = string> = {
+  /**
+   * Acquire a pending file at its sole processing target without replacement.
+   *
+   * @returns Whether the target acquired stable ownership of the source contents.
+   */
+  claim: ({
+    modificationTime,
+    source,
+    target,
+  }: {
+    modificationTime: number;
+    source: Resource;
+    target: Resource;
+  }) => Promise<boolean>;
   createDirectory: (resource: Resource) => Promise<void>;
   join: (directory: Resource, name: string) => Resource;
   /**
@@ -28,13 +42,13 @@ export type QueueFileSystem<Resource = string> = {
    * @throws {QueueFileTooLargeError} If the file exceeds the byte boundary.
    */
   read: (resource: Resource, maximumByteCount: number) => Promise<Uint8Array>;
-  remove: (resource: Resource) => Promise<void>;
   /**
-   * Move a file atomically to a unique ownership target.
+   * Read the resource modification time as Unix epoch milliseconds.
    *
-   * @returns Whether the source existed and moved to the target resource.
+   * @returns Modification time, or null when the resource does not exist.
    */
-  rename: (source: Resource, target: Resource) => Promise<boolean>;
+  readModificationTime: (resource: Resource) => Promise<number | null>;
+  remove: (resource: Resource) => Promise<void>;
   /**
    * Make complete source contents atomically available at a target that does not exist.
    *

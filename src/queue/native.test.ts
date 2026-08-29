@@ -8,7 +8,11 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { QueueFileTooLargeError } from "./file-system.js";
 import { nativeQueueFileSystem } from "./native.js";
-import { NotificationQueue, NotificationQueuePublisher } from "./queue.js";
+import {
+  NotificationQueue,
+  NotificationQueuePublisher,
+  queuePolicy,
+} from "./queue.js";
 import { createRequest, REFERENCE_TIME } from "./test/request.js";
 
 const directoryList: string[] = [];
@@ -63,8 +67,8 @@ describe("nativeQueueFileSystem", () => {
     await publisher.publish(createRequest());
 
     const claimList = await Promise.all([
-      new NotificationQueue(config).claim("window-1"),
-      new NotificationQueue(config).claim("window-2"),
+      new NotificationQueue(config).claim(),
+      new NotificationQueue(config).claim(),
     ]);
 
     expect(claimList.filter((claim) => claim !== null)).toHaveLength(1);
@@ -74,6 +78,27 @@ describe("nativeQueueFileSystem", () => {
         .map((claim) => claim.complete()),
     );
     await expect(nativeQueueFileSystem.list(directory, 1)).resolves.toEqual([]);
+  });
+
+  it("recovers abandoned native ownership after its lifetime", async () => {
+    let now = Date.parse(REFERENCE_TIME) + 60_000;
+    const root = await createTemporaryDirectory();
+    const directory = join(root, "queue");
+    const config = {
+      clock: () => now,
+      directory,
+      fileSystem: nativeQueueFileSystem,
+    };
+    await new NotificationQueuePublisher({
+      ...config,
+      createToken: () => "0123456789abcdef0123456789abcdef",
+    }).publish(createRequest());
+    const queue = new NotificationQueue(config);
+    await expect(queue.claim()).resolves.not.toBeNull();
+
+    now += queuePolicy.claimLifetimeMilliseconds + 1;
+
+    await expect(queue.claim()).resolves.not.toBeNull();
   });
 
   it.runIf(platform() !== "win32")(
@@ -122,11 +147,15 @@ describe("nativeQueueFileSystem", () => {
     await expect(stat(directory)).resolves.toBeDefined();
   });
 
-  it("treats source disappearance as an ordinary rename race", async () => {
+  it("treats source disappearance as an ordinary claim race", async () => {
     const root = await createTemporaryDirectory();
 
     await expect(
-      nativeQueueFileSystem.rename(join(root, "missing"), join(root, "target")),
+      nativeQueueFileSystem.claim({
+        modificationTime: Date.parse(REFERENCE_TIME),
+        source: join(root, "missing"),
+        target: join(root, "target"),
+      }),
     ).resolves.toBe(false);
   });
 

@@ -34,11 +34,9 @@ export type QueueClaim = {
 };
 
 const PENDING_NAME_PATTERN = /^(?<token>[a-f0-9]{32})\.json$/u;
-const PROCESSING_NAME_PATTERN =
-  /^(?<token>[a-f0-9]{32})\.processing\.(?:[A-Za-z0-9_-]{1,64})\.(?<timestamp>\d{1,16})$/u;
+const PROCESSING_NAME_PATTERN = /^(?<token>[a-f0-9]{32})\.processing$/u;
 const TEMPORARY_NAME_PATTERN =
   /^\.publish\.(?:[a-f0-9]{32})\.(?<timestamp>\d{1,16})\.tmp$/u;
-const CONSUMER_IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]{1,64}$/u;
 const TOKEN_PATTERN = /^[a-f0-9]{32}$/u;
 
 const encoder = new TextEncoder();
@@ -70,8 +68,11 @@ const cleanupPriority = ({
   name: string;
   now: number;
 }): number => {
-  const match =
-    PROCESSING_NAME_PATTERN.exec(name) ?? TEMPORARY_NAME_PATTERN.exec(name);
+  if (PROCESSING_NAME_PATTERN.test(name)) {
+    return 0;
+  }
+
+  const match = TEMPORARY_NAME_PATTERN.exec(name);
   if (match !== null) {
     const timestamp = parseTimestamp(match.groups?.timestamp ?? null);
     if (
@@ -126,18 +127,21 @@ const cleanup = async <Resource>({
     const processingMatch = PROCESSING_NAME_PATTERN.exec(name);
     if (processingMatch !== null) {
       const token = processingMatch.groups?.token ?? null;
-      const timestamp = parseTimestamp(
-        processingMatch.groups?.timestamp ?? null,
-      );
-      if (token === null || timestamp === null) {
+      if (token === null) {
         await fileSystem.remove(path);
         continue;
       }
+      const modificationTime = await fileSystem.readModificationTime(path);
+      if (modificationTime === null) {
+        continue;
+      }
       if (
+        !Number.isSafeInteger(modificationTime) ||
+        modificationTime < 0 ||
         exceedsLifetime({
           lifetimeMilliseconds: queuePolicy.claimLifetimeMilliseconds,
           now,
-          timestamp,
+          timestamp: modificationTime,
         })
       ) {
         const pendingName = `${token}.json`;
@@ -285,11 +289,7 @@ export class NotificationQueue<Resource = string> {
    * @returns Claimed request, or null when no valid request is pending.
    * @throws {unknown} If validation or queue access fails unexpectedly.
    */
-  claim = async (consumerId: string): Promise<QueueClaim | null> => {
-    ok(
-      CONSUMER_IDENTIFIER_PATTERN.test(consumerId),
-      "Queue consumer identifier is invalid.",
-    );
+  claim = async (): Promise<QueueClaim | null> => {
     await cleanup({
       clock: this.#clock,
       directory: this.#directory,
@@ -312,9 +312,15 @@ export class NotificationQueue<Resource = string> {
       const pendingPath = this.#fileSystem.join(this.#directory, name);
       const processingPath = this.#fileSystem.join(
         this.#directory,
-        `${token}.processing.${consumerId}.${readTime(this.#clock)}`,
+        `${token}.processing`,
       );
-      if (!(await this.#fileSystem.rename(pendingPath, processingPath))) {
+      if (
+        !(await this.#fileSystem.claim({
+          modificationTime: readTime(this.#clock),
+          source: pendingPath,
+          target: processingPath,
+        }))
+      ) {
         continue;
       }
 

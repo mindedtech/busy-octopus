@@ -51,6 +51,8 @@ const createPublisher = ({
   });
 
 const pendingPath = (token: string): string => `${DIRECTORY}/${token}.json`;
+const processingPath = (token: string): string =>
+  `${DIRECTORY}/${token}.processing`;
 
 describe("NotificationQueuePublisher", () => {
   it("publishes through a temporary file and completes a claim", async () => {
@@ -66,7 +68,7 @@ describe("NotificationQueuePublisher", () => {
       request.notificationId,
     );
 
-    const claim = await queue.claim("window-1");
+    const claim = await queue.claim();
     ok(claim !== null);
     expect(claim.request).toEqual(request);
     await claim.complete();
@@ -74,7 +76,7 @@ describe("NotificationQueuePublisher", () => {
   });
 
   it("removes its temporary file when publication loses ownership", async () => {
-    const fileSystem = new MemoryQueueFileSystem({ disableRename: true });
+    const fileSystem = new MemoryQueueFileSystem({ disableTransition: true });
     const publisher = createPublisher({ fileSystem });
 
     await expect(publisher.publish(createRequest())).rejects.toThrow(
@@ -147,8 +149,8 @@ describe("NotificationQueue claims", () => {
     await createPublisher({ fileSystem }).publish(createRequest());
 
     const claimList = await Promise.all([
-      createQueue({ fileSystem }).claim("window-1"),
-      createQueue({ fileSystem }).claim("window-2"),
+      createQueue({ fileSystem }).claim(),
+      createQueue({ fileSystem }).claim(),
     ]);
 
     expect(claimList.filter((claim) => claim !== null)).toHaveLength(1);
@@ -162,7 +164,8 @@ describe("NotificationQueue claims", () => {
       list: storage.list,
       read: storage.read,
       remove: storage.remove,
-      rename: storage.rename,
+      claim: storage.claim,
+      readModificationTime: storage.readModificationTime,
       placeExclusive: storage.placeExclusive,
     };
     const queue = new NotificationQueue({
@@ -171,7 +174,7 @@ describe("NotificationQueue claims", () => {
       fileSystem,
     });
 
-    await expect(queue.claim("window-1")).resolves.toBeNull();
+    await expect(queue.claim()).resolves.toBeNull();
   });
 
   it("returns abandoned ownership to the pending queue", async () => {
@@ -179,19 +182,19 @@ describe("NotificationQueue claims", () => {
     const queue = createQueue({ fileSystem });
     await createPublisher({ fileSystem }).publish(createRequest());
 
-    const claim = await queue.claim("window-1");
+    const claim = await queue.claim();
     ok(claim !== null);
     await claim.abandon();
 
     expect(fileSystem.nameList(DIRECTORY)).toEqual([`${TOKEN}.json`]);
-    await expect(queue.claim("window-2")).resolves.not.toBeNull();
+    await expect(queue.claim()).resolves.not.toBeNull();
   });
 
   it("preserves an existing pending request during abandonment", async () => {
     const fileSystem = new MemoryQueueFileSystem();
     const queue = createQueue({ fileSystem });
     await createPublisher({ fileSystem }).publish(createRequest());
-    const claim = await queue.claim("window-1");
+    const claim = await queue.claim();
     ok(claim !== null);
     const request = createRequest({
       notificationId: "existing-notification",
@@ -203,7 +206,7 @@ describe("NotificationQueue claims", () => {
 
     await claim.abandon();
 
-    const nextClaim = await queue.claim("window-2");
+    const nextClaim = await queue.claim();
     ok(nextClaim !== null);
     expect(nextClaim.request.notificationId).toBe(request.notificationId);
   });
@@ -212,36 +215,24 @@ describe("NotificationQueue claims", () => {
     const fileSystem = new MemoryQueueFileSystem();
     const queue = createQueue({ fileSystem });
     await createPublisher({ fileSystem }).publish(createRequest());
-    const claim = await queue.claim("window-1");
+    const claim = await queue.claim();
     ok(claim !== null);
-    await fileSystem.remove(
-      `${DIRECTORY}/${TOKEN}.processing.window-1.${REFERENCE_NOW}`,
-    );
+    await fileSystem.remove(processingPath(TOKEN));
 
     await expect(claim.abandon()).rejects.toThrow(
       "Queue claim disappeared before abandonment.",
     );
   });
 
-  it("treats a lost pending rename as a competing-consumer race", async () => {
-    const fileSystem = new MemoryQueueFileSystem({ disableRename: true });
+  it("treats a lost pending claim as a competing-consumer race", async () => {
+    const fileSystem = new MemoryQueueFileSystem({ disableTransition: true });
     fileSystem.seed(
       pendingPath(TOKEN),
       NotificationRequestJson.encode(createRequest()),
     );
 
-    await expect(
-      createQueue({ fileSystem }).claim("window-1"),
-    ).resolves.toBeNull();
+    await expect(createQueue({ fileSystem }).claim()).resolves.toBeNull();
     expect(fileSystem.nameList(DIRECTORY)).toEqual([`${TOKEN}.json`]);
-  });
-
-  it("rejects an unsafe consumer identifier", async () => {
-    const fileSystem = new MemoryQueueFileSystem();
-
-    await expect(
-      createQueue({ fileSystem }).claim("unsafe/consumer"),
-    ).rejects.toThrow("Queue consumer identifier is invalid.");
   });
 
   it("preserves a claim after an unexpected read failure", async () => {
@@ -250,12 +241,10 @@ describe("NotificationQueue claims", () => {
     });
     await createPublisher({ fileSystem }).publish(createRequest());
 
-    await expect(createQueue({ fileSystem }).claim("window-1")).rejects.toThrow(
+    await expect(createQueue({ fileSystem }).claim()).rejects.toThrow(
       "Synthetic queue read failure.",
     );
-    expect(fileSystem.nameList(DIRECTORY)).toEqual([
-      `${TOKEN}.processing.window-1.${REFERENCE_NOW}`,
-    ]);
+    expect(fileSystem.nameList(DIRECTORY)).toEqual([`${TOKEN}.processing`]);
   });
 });
 
@@ -276,9 +265,7 @@ describe("NotificationQueue validation", () => {
       new Uint8Array(MAXIMUM_NOTIFICATION_REQUEST_BYTE_COUNT + 1),
     );
 
-    await expect(
-      createQueue({ fileSystem }).claim("window-1"),
-    ).resolves.toBeNull();
+    await expect(createQueue({ fileSystem }).claim()).resolves.toBeNull();
     expect(fileSystem.nameList(DIRECTORY)).toEqual([]);
   });
 
@@ -295,7 +282,7 @@ describe("NotificationQueue validation", () => {
       createQueue({
         clock: () => now,
         fileSystem,
-      }).claim("window-1"),
+      }).claim(),
     ).resolves.toBeNull();
     expect(fileSystem.nameList(DIRECTORY)).toEqual([]);
   });
@@ -313,7 +300,7 @@ describe("NotificationQueue validation", () => {
       createQueue({
         clock: () => now,
         fileSystem,
-      }).claim("window-1"),
+      }).claim(),
     ).resolves.not.toBeNull();
   });
 });
@@ -326,15 +313,16 @@ describe("NotificationQueue cleanup", () => {
     await createPublisher({ clock: () => now, fileSystem }).publish(
       createRequest(),
     );
-    await queue.claim("window-1");
+    await queue.claim();
 
     now += queuePolicy.claimLifetimeMilliseconds + 1;
 
-    await expect(queue.claim("window-2")).resolves.not.toBeNull();
+    await expect(queue.claim()).resolves.not.toBeNull();
   });
 
   it("preserves a pending request during stale claim recovery", async () => {
-    const fileSystem = new MemoryQueueFileSystem();
+    const claimTime = REFERENCE_NOW - queuePolicy.claimLifetimeMilliseconds - 1;
+    const fileSystem = new MemoryQueueFileSystem({ clock: () => claimTime });
     const request = createRequest({
       notificationId: "existing-notification",
     });
@@ -342,15 +330,14 @@ describe("NotificationQueue cleanup", () => {
       pendingPath(TOKEN),
       NotificationRequestJson.encode(request),
     );
-    const claimTime = REFERENCE_NOW - queuePolicy.claimLifetimeMilliseconds - 1;
     fileSystem.seed(
-      `${DIRECTORY}/${TOKEN}.processing.window-1.${claimTime}`,
+      processingPath(TOKEN),
       NotificationRequestJson.encode(
         createRequest({ notificationId: "stale-notification" }),
       ),
     );
 
-    const claim = await createQueue({ fileSystem }).claim("window-2");
+    const claim = await createQueue({ fileSystem }).claim();
 
     ok(claim !== null);
     expect(claim.request.notificationId).toBe(request.notificationId);
@@ -360,12 +347,10 @@ describe("NotificationQueue cleanup", () => {
     const fileSystem = new MemoryQueueFileSystem();
     const queue = createQueue({ fileSystem });
     await createPublisher({ fileSystem }).publish(createRequest());
-    await queue.claim("window-1");
+    await queue.claim();
 
-    await expect(queue.claim("window-2")).resolves.toBeNull();
-    expect(fileSystem.nameList(DIRECTORY)).toEqual([
-      `${TOKEN}.processing.window-1.${REFERENCE_NOW}`,
-    ]);
+    await expect(queue.claim()).resolves.toBeNull();
+    expect(fileSystem.nameList(DIRECTORY)).toEqual([`${TOKEN}.processing`]);
   });
 
   it("removes stale publication files while preserving fresh work", async () => {
@@ -375,7 +360,7 @@ describe("NotificationQueue cleanup", () => {
       `${DIRECTORY}/.publish.${"2".repeat(32)}.${REFERENCE_NOW}.tmp`,
     );
 
-    await createQueue({ fileSystem }).claim("window-1");
+    await createQueue({ fileSystem }).claim();
 
     expect(fileSystem.nameList(DIRECTORY)).toEqual([
       `.publish.${"2".repeat(32)}.${REFERENCE_NOW}.tmp`,
@@ -395,7 +380,7 @@ describe("NotificationQueue cleanup", () => {
       fileSystem.seed(`${DIRECTORY}/invalid-${index}`);
     }
 
-    await createQueue({ fileSystem }).claim("window-1");
+    await createQueue({ fileSystem }).claim();
 
     expect(fileSystem.nameList(DIRECTORY)).toHaveLength(6);
     expect(listLimitList).toContain(

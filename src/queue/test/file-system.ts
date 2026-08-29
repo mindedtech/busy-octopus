@@ -12,24 +12,49 @@ import {
 const encoder = new TextEncoder();
 
 export class MemoryQueueFileSystem implements QueuePublisherFileSystem {
-  #disableRename: boolean;
-  #fileMap = new Map<string, Uint8Array>();
+  #clock: () => number;
+  #disableTransition: boolean;
+  #fileMap = new Map<
+    string,
+    { byteList: Uint8Array; modificationTime: number }
+  >();
   #onList: ((maximumEntryCount: number) => void) | undefined;
   #readError: Error | null;
 
   constructor({
-    disableRename = false,
+    clock = Date.now,
+    disableTransition = false,
     onList,
     readError = null,
   }: {
-    disableRename?: boolean;
+    clock?: () => number;
+    disableTransition?: boolean;
     onList?: (maximumEntryCount: number) => void;
     readError?: Error | null;
   } = {}) {
-    this.#disableRename = disableRename;
+    this.#clock = clock;
+    this.#disableTransition = disableTransition;
     this.#onList = onList;
     this.#readError = readError;
   }
+
+  claim: QueuePublisherFileSystem["claim"] = async ({
+    modificationTime,
+    source,
+    target,
+  }) => {
+    if (this.#disableTransition || this.#fileMap.has(target)) {
+      return false;
+    }
+
+    const entry = this.#fileMap.get(source);
+    if (entry === undefined) {
+      return false;
+    }
+    this.#fileMap.set(target, { ...entry, modificationTime });
+    this.#fileMap.delete(source);
+    return true;
+  };
 
   createDirectory: QueuePublisherFileSystem["createDirectory"] = async (
     _path,
@@ -50,41 +75,36 @@ export class MemoryQueueFileSystem implements QueuePublisherFileSystem {
       throw this.#readError;
     }
 
-    const byteList = this.#fileMap.get(path);
-    ok(byteList !== undefined, "Queue file does not exist.");
-    if (byteList.byteLength > maximumByteCount) {
+    const entry = this.#fileMap.get(path);
+    ok(entry !== undefined, "Queue file does not exist.");
+    if (entry.byteList.byteLength > maximumByteCount) {
       throw new QueueFileTooLargeError(maximumByteCount);
     }
-    return byteList;
+    return entry.byteList;
   };
+
+  readModificationTime: QueuePublisherFileSystem["readModificationTime"] =
+    async (path) => this.#fileMap.get(path)?.modificationTime ?? null;
 
   remove: QueuePublisherFileSystem["remove"] = async (path) => {
     this.#fileMap.delete(path);
-  };
-
-  rename: QueuePublisherFileSystem["rename"] = async (source, target) => {
-    if (this.#disableRename) {
-      return false;
-    }
-
-    const byteList = this.#fileMap.get(source);
-    if (byteList === undefined) {
-      return false;
-    }
-    this.#fileMap.delete(source);
-    this.#fileMap.set(target, byteList);
-    return true;
   };
 
   placeExclusive: QueuePublisherFileSystem["placeExclusive"] = async (
     source,
     target,
   ) => {
-    if (this.#disableRename || this.#fileMap.has(target)) {
+    if (this.#disableTransition || this.#fileMap.has(target)) {
       return false;
     }
 
-    return this.rename(source, target);
+    const entry = this.#fileMap.get(source);
+    if (entry === undefined) {
+      return false;
+    }
+    this.#fileMap.set(target, entry);
+    this.#fileMap.delete(source);
+    return true;
   };
 
   writeExclusive: QueuePublisherFileSystem["writeExclusive"] = async (
@@ -92,14 +112,17 @@ export class MemoryQueueFileSystem implements QueuePublisherFileSystem {
     byteList,
   ) => {
     ok(!this.#fileMap.has(path), "Queue file already exists.");
-    this.#fileMap.set(path, byteList);
+    this.#fileMap.set(path, {
+      byteList,
+      modificationTime: this.#clock(),
+    });
   };
 
   seed = (path: string, value: string | Uint8Array = ""): void => {
-    this.#fileMap.set(
-      path,
-      typeof value === "string" ? encoder.encode(value) : value,
-    );
+    this.#fileMap.set(path, {
+      byteList: typeof value === "string" ? encoder.encode(value) : value,
+      modificationTime: this.#clock(),
+    });
   };
 
   nameList = (path: string): string[] =>
@@ -108,7 +131,9 @@ export class MemoryQueueFileSystem implements QueuePublisherFileSystem {
       .map((filePath) => basename(filePath));
 
   text = (path: string): string | null => {
-    const byteList = this.#fileMap.get(path);
-    return byteList === undefined ? null : new TextDecoder().decode(byteList);
+    const entry = this.#fileMap.get(path);
+    return entry === undefined
+      ? null
+      : new TextDecoder().decode(entry.byteList);
   };
 }

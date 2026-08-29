@@ -3,16 +3,18 @@
  */
 
 import { ok } from "node:assert/strict";
+import { COPYFILE_EXCL } from "node:constants";
 import type { Stats } from "node:fs";
 import {
   chmod,
+  copyFile,
   link,
   lstat,
   mkdir,
   open,
   opendir,
-  rename,
   rm,
+  utimes,
   writeFile,
 } from "node:fs/promises";
 import { join } from "node:path";
@@ -25,6 +27,30 @@ const fileMissing = (error: unknown): boolean =>
   error instanceof Error && "code" in error && error.code === "ENOENT";
 
 export const nativeQueueFileSystem: QueuePublisherFileSystem = {
+  claim: async ({ modificationTime, source, target }) => {
+    try {
+      await copyFile(source, target, COPYFILE_EXCL);
+    } catch (error: unknown) {
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        (error.code === "ENOENT" || error.code === "EEXIST")
+      ) {
+        return false;
+      }
+      throw error;
+    }
+
+    try {
+      const time = modificationTime / 1_000;
+      await utimes(target, time, time);
+      await rm(source, { force: true });
+    } catch (error: unknown) {
+      await rm(target, { force: true }).catch(() => undefined);
+      throw error;
+    }
+    return true;
+  },
   createDirectory: async (path) => {
     await mkdir(path, { mode: 0o700, recursive: true });
     await chmod(path, 0o700);
@@ -70,6 +96,16 @@ export const nativeQueueFileSystem: QueuePublisherFileSystem = {
       await file.close();
     }
   },
+  readModificationTime: async (path) => {
+    try {
+      return Math.trunc((await lstat(path)).mtimeMs);
+    } catch (error: unknown) {
+      if (fileMissing(error)) {
+        return null;
+      }
+      throw error;
+    }
+  },
   remove: async (path) => {
     let status: Stats;
     try {
@@ -84,17 +120,6 @@ export const nativeQueueFileSystem: QueuePublisherFileSystem = {
       return;
     }
     await rm(path, { force: true });
-  },
-  rename: async (source, target) => {
-    try {
-      await rename(source, target);
-      return true;
-    } catch (error: unknown) {
-      if (fileMissing(error)) {
-        return false;
-      }
-      throw error;
-    }
   },
   placeExclusive: async (source, target) => {
     try {
