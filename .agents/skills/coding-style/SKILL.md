@@ -21,6 +21,7 @@ When one style violation is found, scan every in-scope authored file for the sam
 - Never change runtime behavior merely to silence static analysis.
 - Prefer inference for local values. Type public APIs, parameters, generic constraints, and non-obvious return contracts explicitly.
 - Derive related types with TypeScript utility types instead of duplicating shapes. Give generic parameters descriptive names.
+- Prefer indexed access type references for interface-defined methods and properties instead of repeating their parameter and return types.
 - Treat values as effectively read-only by default: do not mutate inputs or shared data, and prefer `const`, non-mutating operations, and explicit copies. Do not clutter internal types with `readonly`, `Readonly`, `ReadonlyArray`, or deep-readonly utilities. Use type-level readonly only when compiler enforcement materially defines a public ownership contract.
 - Use `satisfies` when an expression otherwise lacks a target type and narrow inference must be preserved. Omit it when an assignment, return, or function call already enforces the same constraint contextually.
 
@@ -75,6 +76,7 @@ Use `z.custom<T>()` only as a last resort for values that Zod cannot fully descr
 - Destructure named imports instead of importing a namespace or default object to access its members. Destructure parameters and returned values to the deepest useful level; do not bind an aggregate solely to access its children. Retain the aggregate when its identity or lifecycle is meaningful.
 - Prefer named exports. Use default exports only when a tool requires them.
 - Prefer named Node.js imports over namespace property access.
+- Use ECMAScript `#` private fields and methods for class internals; do not use TypeScript's `private` modifier. Omit `#` only for class fields and methods that are intentionally public.
 - Keep internals private. Do not expose queue state, filesystem operations, timers, diagnostics, or lifecycle hooks to make callers or tests convenient; improve the owning abstraction's public API instead.
 - Put shared code in a domain-named module. Do not create catch-all `helpers.ts` or `utils.ts` files.
 - Prefer directories to hyphenated filenames for namespacing related concepts: use `scripts/build/cli.ts`, not `scripts/build-cli.ts`. Keep a hyphen only when it belongs to one indivisible filename concept rather than representing hierarchy.

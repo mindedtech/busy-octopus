@@ -11,6 +11,7 @@ Current repository status:
 - [x] Development setup
 - [x] Internal generic notification protocol foundation
 - [x] Internal workspace resolution foundation
+- [x] Internal notification queue foundation
 - [ ] Working notifier
 - [ ] CLI
 - [ ] Library
