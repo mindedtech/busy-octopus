@@ -6,7 +6,14 @@ Busy Octopus is a VS Code extension that notifies you when an agent or workspace
 
 The extension acts as a local notification bridge, delivering requests from native workspaces, WSL, and Dev Containers through the VS Code UI host without a cloud service, network daemon, or host-side CLI installation.
 
-The repository currently contains the development setup only. It does not yet provide a working notifier, CLI, library, or VS Code extension.
+Current repository status:
+
+- [x] Development setup
+- [x] Internal generic notification protocol foundation
+- [ ] Working notifier
+- [ ] CLI
+- [ ] Library
+- [ ] VS Code extension
 
 ## Development
 
