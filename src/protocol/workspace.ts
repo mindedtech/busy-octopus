@@ -5,20 +5,28 @@
 import { z } from "zod";
 import { boundText } from "./text.js";
 
+export const WorkspaceLabel = boundText({
+  domain: "Workspace label",
+  maximumCodePointCount: 120,
+})
+  .nullable()
+  .describe("Provide a user-visible workspace label when available.");
+
+export type WorkspaceLabel = z.infer<typeof WorkspaceLabel>;
+
+export const WorkspaceBranch = boundText({
+  domain: "Workspace branch",
+  maximumCodePointCount: 256,
+})
+  .nullable()
+  .describe("Provide a user-visible branch label when available.");
+
+export type WorkspaceBranch = z.infer<typeof WorkspaceBranch>;
+
 export const WorkspaceDisplay = z
   .strictObject({
-    label: boundText({
-      domain: "Workspace label",
-      maximumCodePointCount: 120,
-    })
-      .nullable()
-      .describe("Provide a user-visible workspace label when available."),
-    branch: boundText({
-      domain: "Workspace branch",
-      maximumCodePointCount: 256,
-    })
-      .nullable()
-      .describe("Provide a user-visible branch label when available."),
+    label: WorkspaceLabel,
+    branch: WorkspaceBranch,
   })
   .describe("Provide optional user-visible workspace context.");
 
