@@ -14,15 +14,24 @@
     "url": "git+https://github.com/mindedtech/busy-octopus.git"
   },
   "scripts": {
-    "check": "pnpm check:biome && pnpm check:knip",
+    "check": "pnpm check:biome && pnpm check:types && pnpm check:knip",
     "check:biome": "biome check .",
     "check:fix": "biome check --write .",
     "check:knip": "knip",
+    "check:types": "tsc --noEmit",
     "format": "biome format --write .",
-    "verify": "pnpm check"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verify": "pnpm install --frozen-lockfile && pnpm check && pnpm test && pnpm audit --prod --audit-level high"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.10",
-    "knip": "6.32.3"
+    "@types/node": "22.20.1",
+    "knip": "6.32.3",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
+  },
+  "dependencies": {
+    "zod": "4.4.3"
   }
 }

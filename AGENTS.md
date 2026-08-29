@@ -46,9 +46,12 @@ These rules apply to the entire repository.
 - Read and follow `.agents/skills/code-docs/SKILL.md` when writing or reviewing code documentation.
 - Read and follow `.agents/skills/commit-messages/SKILL.md` when drafting, reviewing, or creating commits and pull requests.
 - Read and follow `.agents/skills/update-deps/SKILL.md` when reviewing or updating dependencies, package-manager versions, runtime images, Actions, or repeated tool pins.
+- After generating or modifying code, always complete the final review required by every applicable skill across all authored files in scope before presenting the result. Passing automated checks does not replace this review.
+- Keep shared configuration, test infrastructure, and their documentation scoped to stable project-wide concerns. Do not name, describe, or constrain shared tooling around the current feature unless the behavior is genuinely feature-specific.
+- Write inventories as Markdown lists instead of prose. Use task checkboxes when the inventory communicates completed and incomplete work or available and unavailable capabilities.
 - Use root `pnpm` scripts as the development interface; do not add Taskfile, ESLint, Prettier, shared configuration packages, or a second TypeScript version.
 - Make small, focused changes and add or update tests for changed behavior.
-- Use `pnpm verify` as the complete ordinary local verification command. Report any check not run or any failure.
+- Use `pnpm verify` as the complete local verification command before pushing; it must include a frozen install, all ordinary checks and tests, and the production dependency audit. Report any check not run or any failure.
 - Before adding or upgrading a dependency, verify its current supported usage in official documentation, the package registry, and upstream release notes.
 - Pin dependencies exactly unless a documented release workflow requires otherwise.
 - Verify both npm tarball and VSIX contents with explicit allow-lists before release.

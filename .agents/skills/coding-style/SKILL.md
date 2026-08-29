@@ -60,7 +60,7 @@ Use `z.custom<T>()` only as a last resort for values that Zod cannot fully descr
 ## Naming and structure
 
 - Do not use plural identifiers. Describe the collection shape with a singular domain name and a suffix: `requestList`, `requestMap`, `workspaceSet`, not `requests`, `requestLookup`, or `workspaces`. This avoids irregular and inconsistent English pluralization. Preserve field names imposed by external APIs and serialized contracts.
-- Avoid past participles in derived-value names. Prefer the operation or domain concept (`load`, `result`, `requestList`) over `loaded`, `processed`, or `sortedList`. Established fields such as `createdAt` and boolean adjectives such as `enabled` remain valid. A past participle often signals a single-use intermediate that should be inlined.
+- Do not use past participles in authored identifiers, including function, schema, type, callback, local-value, and constant names. Prefer a direct operation or domain concept: `boundText`, not `boundedText`; `load`, not `loaded`; `result`, not `processed`; and `REFERENCE_TIMESTAMP`, not `FIXED_TIMESTAMP`. Preserve names imposed by external contracts and boolean adjectives such as `enabled`. A wire format controlled by this project follows these naming rules and is not an external-contract exemption. Inline a single-use intermediate when no clear operation or domain name remains.
 - Name values for what they represent, not their provenance or implementation: prefer `request` to `requestFromQueue` and `config` to `configData`.
 - Group parallel variants under their shared concept instead of repeating that concept in flat names: prefer `fileList: { actual, allow }` to `actualFileList` and `allowFileList`.
 - Never use compound identifiers shaped like `xOrY`, `xAndY`, `xWithY`, `xFromY`, or `xByY`. Split alternatives and unrelated concerns, introduce a single domain concept, or use a collection-shape suffix. For example, use `target` instead of `idOrSlug`, `author` instead of `userWithPosts`, `user` instead of `userFromDatabase`, and `userMap` instead of `userListByEmail`.
@@ -102,7 +102,7 @@ Use `z.custom<T>()` only as a last resort for values that Zod cannot fully descr
 Before presenting code, verify:
 
 1. No `any`, unjustified assertion, or unapproved suppression was introduced.
-2. Names use singular domain concepts plus collection-shape suffixes, avoid past participles, and contain no `Or`/`And`/`With`/`From`/`By` compounds.
+2. Inspect every introduced or changed identifier. Names use singular domain concepts plus collection-shape suffixes, contain no past participles, and contain no `Or`/`And`/`With`/`From`/`By` compounds.
 3. Single-use intermediates are justified, parameters and returned values are destructured to the deepest useful level, and control flow contains no `else`.
 4. Every untrusted boundary is validated once with a strict, bounded contract; significant omissions use explicit `null` where the caller owns the choice.
 5. Errors, cancellations, resources, and fail-open behavior are explicit.
