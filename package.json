@@ -1,5 +1,5 @@
 {
-  "name": "@mindedtech/busy-octopus",
+  "name": "busy-octopus",
   "version": "0.0.0",
   "description": "VS Code extension to notify you when an agent or workspace needs attention",
   "license": "MIT",
