@@ -5,6 +5,15 @@
   "license": "MIT",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/library/index.d.ts",
+      "import": "./dist/library/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "engines": {
     "node": ">=22.12.0"
   },
@@ -14,15 +23,17 @@
     "url": "git+https://github.com/mindedtech/busy-octopus.git"
   },
   "scripts": {
+    "build": "tsc --build --clean tsconfig.build.json && tsc --project tsconfig.build.json",
     "check": "pnpm check:biome && pnpm check:types && pnpm check:knip",
     "check:biome": "biome check .",
     "check:fix": "biome check --write .",
     "check:knip": "knip",
     "check:types": "tsc --noEmit",
     "format": "biome format --write .",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "verify": "pnpm install --frozen-lockfile && pnpm check && pnpm test && pnpm audit --prod --audit-level high"
+    "test": "vitest run src",
+    "test:package": "vitest run test/package.test.ts",
+    "test:watch": "vitest src",
+    "verify": "pnpm install --frozen-lockfile && pnpm check && pnpm test && pnpm test:package && pnpm audit --prod --audit-level high"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.10",
