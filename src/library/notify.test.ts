@@ -2,13 +2,12 @@
  * @file Verify programmatic notification publication.
  */
 
-import { ok } from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { promisify } from "node:util";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, assert, describe, expect, it, vi } from "vitest";
 import {
   MAXIMUM_NOTIFICATION_REQUEST_BYTE_COUNT,
   type NotificationRequest,
@@ -50,7 +49,10 @@ const claimRequest = async (
     fileSystem: nativeQueueFileSystem,
   });
   const claim = await queue.claim();
-  ok(claim !== null, "Notification request must reach the workspace queue.");
+  assert(
+    claim !== null,
+    "Notification request must reach the workspace queue.",
+  );
   await claim.complete();
   return claim.request;
 };

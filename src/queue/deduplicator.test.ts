@@ -2,8 +2,7 @@
  * @file Verify bounded notification duplicate suppression.
  */
 
-import { ok } from "node:assert/strict";
-import { describe, expect, it } from "vitest";
+import { assert, describe, expect, it } from "vitest";
 import {
   type DeduplicationClaim,
   NotificationDeduplicator,
@@ -14,7 +13,7 @@ const claimNotification = (
   notificationId: string,
 ): DeduplicationClaim => {
   const claim = deduplicator.claim(notificationId);
-  ok(claim !== null, "Expected notification deduplication ownership.");
+  assert(claim !== null, "Expected notification deduplication ownership.");
   return claim;
 };
 

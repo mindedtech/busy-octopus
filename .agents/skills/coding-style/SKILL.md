@@ -55,7 +55,7 @@ Use `z.custom<T>()` only as a last resort for values that Zod cannot fully descr
 - Use `Promise.withResolvers()` when settlement occurs outside construction.
 - Pass `AbortSignal` through cancellable asynchronous operations and check it at meaningful boundaries.
 - A `.catch()` callback must type its error parameter as `unknown`.
-- In Node.js TypeScript, express guard conditions and invariants with the matching named import from `node:assert/strict`: use `ok` for predicates, `strictEqual` for scalar equality, and `deepStrictEqual` for structural equality instead of `if` and `throw` or manual comparison and serialization. Keep deliberately recoverable failures as operation-specific errors.
+- In production Node.js TypeScript, express guard conditions and invariants with the matching named import from `node:assert/strict`: use `ok` for predicates, `strictEqual` for scalar equality, and `deepStrictEqual` for structural equality instead of `if` and `throw` or manual comparison and serialization. Keep deliberately recoverable failures as operation-specific errors.
 - Do not hide a missing required value behind a fallback. Report or throw an operation-specific error. Product defaults remain valid when absence is an expected input state.
 
 ## Naming and structure
@@ -93,6 +93,7 @@ Use `z.custom<T>()` only as a last resort for values that Zod cannot fully descr
 
 ## Tests
 
+- In `*.test.ts` files, use Vitest `expect` assertions. Use Vitest `assert` only when its assertion signature is needed to narrow a value. Do not import `node:assert` in test files; this restriction does not apply to test support modules.
 - Test behavior and public boundaries, including failure and cleanup paths.
 - Do not remove or weaken a failing assertion to make a test pass. Find the cause and fix the implementation or an independently invalid test.
 - Use redacted synthetic fixtures. Never copy real prompts, paths, credentials, or hook payloads into the repository.
