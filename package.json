@@ -5,6 +5,9 @@
   "license": "MIT",
   "private": true,
   "type": "module",
+  "bin": {
+    "busy-octopus": "./dist/cli/main.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/library/index.d.ts",
@@ -23,13 +26,16 @@
     "url": "git+https://github.com/mindedtech/busy-octopus.git"
   },
   "scripts": {
-    "build": "tsc --build --clean tsconfig.build.json && tsc --project tsconfig.build.json",
+    "build": "tsc --build --clean tsconfig.build.json && tsc --project tsconfig.build.json && pnpm build:cli",
+    "build:cli": "esbuild src/cli/main.ts --bundle --format=esm --packages=external --platform=node --target=node22.12 --outfile=dist/cli/main.js",
+    "cli": "pnpm build && node dist/cli/main.js",
     "check": "pnpm check:biome && pnpm check:types && pnpm check:knip",
     "check:biome": "biome check .",
     "check:fix": "biome check --write .",
     "check:knip": "knip",
     "check:types": "tsc --noEmit",
     "format": "biome format --write .",
+    "measure:cli:cold-start": "pnpm build && node --experimental-strip-types scripts/measure/cli/cold-start.ts",
     "test": "vitest run src",
     "test:package": "vitest run test/package.test.ts",
     "test:watch": "vitest src",
@@ -38,11 +44,14 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.10",
     "@types/node": "22.20.1",
+    "esbuild": "0.28.2",
     "knip": "6.32.3",
     "typescript": "7.0.2",
     "vitest": "4.1.11"
   },
   "dependencies": {
+    "@commander-js/extra-typings": "15.0.0",
+    "commander": "15.0.0",
     "zod": "4.4.3"
   }
 }
