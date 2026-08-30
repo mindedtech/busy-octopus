@@ -16,7 +16,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
-import { expect, it } from "vitest";
+import { assert, expect, it } from "vitest";
 import { z } from "zod";
 
 const execFileAsync = promisify(execFile);
@@ -63,6 +63,7 @@ const QueueRequest = z.strictObject({
 const allowFileList = [
   "LICENSE",
   "README.md",
+  "dist/cli/main.js",
   "dist/library/index.d.ts",
   "dist/library/index.js",
   "dist/library/notify.d.ts",
@@ -85,6 +86,8 @@ const allowFileList = [
   "dist/workspace/identity.js",
   "dist/workspace/resolution.d.ts",
   "dist/workspace/resolution.js",
+  "dist/workspace/queue.d.ts",
+  "dist/workspace/queue.js",
   "dist/workspace/runtime.d.ts",
   "dist/workspace/runtime.js",
   "package.json",
@@ -130,14 +133,17 @@ const execute = async ({
 const runPnpm = async ({
   argumentList,
   directory = repositoryDirectory,
+  environment,
 }: {
   argumentList: string[];
   directory?: string;
+  environment?: NodeJS.ProcessEnv;
 }): Promise<string> =>
   execute({
     argumentList: [...pnpmProcess.argumentList, ...argumentList],
     command: pnpmProcess.command,
     directory,
+    ...(environment === undefined ? {} : { environment }),
   });
 
 const parseQueueRequest = async (path: string) => {
@@ -192,7 +198,7 @@ const findQueueRequest = async ({
   return null;
 };
 
-it("publishes through the packed package", async () => {
+it("verifies the packed library and CLI", async () => {
   const fixtureDirectory = await mkdtemp(
     join(tmpdir(), "busy-octopus-package-"),
   );
@@ -235,6 +241,66 @@ it("publishes through the packed package", async () => {
       directory: fixtureDirectory,
     });
 
+    const runtimeEnvironment = {
+      ...process.env,
+      TEMP: runtimeTemporaryDirectory,
+      TMP: runtimeTemporaryDirectory,
+      TMPDIR: runtimeTemporaryDirectory,
+    };
+    await expect(
+      runPnpm({
+        argumentList: [
+          "exec",
+          "busy-octopus",
+          "doctor",
+          "--directory",
+          workspaceDirectory,
+        ],
+        directory: fixtureDirectory,
+        environment: runtimeEnvironment,
+      }),
+    ).resolves.toBe("Workspace resolution: ok\nQueue routing: ok\n");
+    expect(await readQueueRoot(queueRoot)).toEqual([]);
+
+    const cliNotificationId = `cli-notification-${randomUUID()}`;
+    await expect(
+      runPnpm({
+        argumentList: [
+          "exec",
+          "busy-octopus",
+          "notify",
+          "--title",
+          "Synthetic CLI notification",
+          "--body",
+          "Review the synthetic CLI result.",
+          "--directory",
+          workspaceDirectory,
+          "--notification-id",
+          cliNotificationId,
+          "--source-kind",
+          "test",
+          "--source-name",
+          "Synthetic CLI runner",
+        ],
+        directory: fixtureDirectory,
+        environment: runtimeEnvironment,
+      }),
+    ).resolves.toBe(`${cliNotificationId}\n`);
+    const cliQueueResult = await findQueueRequest({
+      notificationId: cliNotificationId,
+      queueRoot,
+    });
+    assert(
+      cliQueueResult !== null,
+      "CLI request must reach a workspace queue.",
+    );
+    expect(cliQueueResult.request).toMatchObject({
+      notificationId: cliNotificationId,
+      title: "Synthetic CLI notification",
+      body: "Review the synthetic CLI result.",
+      source: { kind: "test", name: "Synthetic CLI runner" },
+    });
+
     const javascriptPath = join(fixtureDirectory, "consumer.mjs");
     await writeFile(
       javascriptPath,
@@ -271,12 +337,7 @@ process.stdout.write(JSON.stringify(await library.notify({
             argumentList: [javascriptPath, workspaceDirectory, notificationId],
             command: process.execPath,
             directory: fixtureDirectory,
-            environment: {
-              ...process.env,
-              TEMP: runtimeTemporaryDirectory,
-              TMP: runtimeTemporaryDirectory,
-              TMPDIR: runtimeTemporaryDirectory,
-            },
+            environment: runtimeEnvironment,
           }),
         ),
       ).notificationId,
@@ -322,16 +383,96 @@ void result;
     });
 
     const queueResult = await findQueueRequest({ notificationId, queueRoot });
-    expect(queueResult).not.toBeNull();
-    if (queueResult === null) {
-      return;
-    }
+    assert(
+      queueResult !== null,
+      "Library request must reach a workspace queue.",
+    );
     expect(queueResult.request.workspace.display.label).toBe(
       basename(workspaceDirectory),
     );
     expect(queueResult.request.workspace.display.branch).toBeNull();
     expect(basename(queueResult.directory)).toBe(
       queueResult.request.workspace.instanceId,
+    );
+    expect(queueResult.directory).toBe(cliQueueResult.directory);
+
+    const primaryCheckoutDirectory = join(fixtureDirectory, "primary-checkout");
+    const worktreeDirectory = join(fixtureDirectory, "linked-worktree");
+    await execute({
+      argumentList: [
+        "clone",
+        "--local",
+        "--no-hardlinks",
+        "--quiet",
+        repositoryDirectory,
+        primaryCheckoutDirectory,
+      ],
+      command: "git",
+      directory: fixtureDirectory,
+    });
+    await execute({
+      argumentList: [
+        "-C",
+        primaryCheckoutDirectory,
+        "worktree",
+        "add",
+        "--quiet",
+        "--detach",
+        worktreeDirectory,
+      ],
+      command: "git",
+      directory: fixtureDirectory,
+    });
+
+    const primaryNotificationId = `primary-notification-${randomUUID()}`;
+    const worktreeNotificationId = `linked-notification-${randomUUID()}`;
+    for (const [directory, checkoutNotificationId] of [
+      [join(primaryCheckoutDirectory, "src"), primaryNotificationId],
+      [join(worktreeDirectory, "src"), worktreeNotificationId],
+    ] as const) {
+      await expect(
+        runPnpm({
+          argumentList: [
+            "exec",
+            "busy-octopus",
+            "notify",
+            "--title",
+            "Synthetic checkout notification",
+            "--directory",
+            directory,
+            "--notification-id",
+            checkoutNotificationId,
+          ],
+          directory: fixtureDirectory,
+          environment: runtimeEnvironment,
+        }),
+      ).resolves.toBe(`${checkoutNotificationId}\n`);
+    }
+
+    const primaryQueueResult = await findQueueRequest({
+      notificationId: primaryNotificationId,
+      queueRoot,
+    });
+    const worktreeQueueResult = await findQueueRequest({
+      notificationId: worktreeNotificationId,
+      queueRoot,
+    });
+    assert(
+      primaryQueueResult !== null,
+      "Primary checkout request must reach a workspace queue.",
+    );
+    assert(
+      worktreeQueueResult !== null,
+      "Linked worktree request must reach a workspace queue.",
+    );
+    expect(worktreeQueueResult.directory).not.toBe(
+      primaryQueueResult.directory,
+    );
+    expect(primaryQueueResult.request.workspace.display.label).toBe(
+      basename(primaryCheckoutDirectory),
+    );
+    expect(worktreeQueueResult.request.workspace.display.label).toBe(
+      basename(worktreeDirectory),
     );
   } finally {
     const queueResult = await findQueueRequest({ notificationId, queueRoot });

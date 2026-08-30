@@ -14,7 +14,7 @@ Current repository status:
 - [x] Internal notification queue foundation
 - [x] Programmatic notification library foundation
 - [ ] Working notifier
-- [ ] CLI
+- [x] CLI
 - [ ] VS Code extension
 
 ## Library
@@ -38,6 +38,26 @@ Pass `directory` to select a workspace explicitly; omitting it uses the current 
 
 The promise rejects when input validation, workspace resolution, or queue publication fails. Integrations that must fail open should catch and diagnose those errors without failing the upstream task.
 
+## CLI
+
+The package provides the same notification publisher as the `busy-octopus` executable. It currently writes to the internal local queue; visible delivery still requires the future VS Code extension consumer.
+
+```shell
+busy-octopus notify \
+  --title "Agent finished" \
+  --body "Review the result when ready."
+```
+
+Omit `--directory` to use the current working directory. Run `busy-octopus notify --help` for workspace, source, and retry-identifier options. A successful invocation prints the notification identifier; invalid arguments and publication failures return nonzero exit codes.
+
+Check workspace resolution and queue routing without publishing a request:
+
+```shell
+busy-octopus doctor
+```
+
+The diagnostic output reports only whether workspace resolution and queue routing succeeded. It does not print workspace paths, display metadata, notification content, or queue identifiers.
+
 ## Development
 
 Use the Dev Container, or install Node.js 22.12 or later and the pnpm version declared in `package.json`.
@@ -45,6 +65,8 @@ Use the Dev Container, or install Node.js 22.12 or later and the pnpm version de
 ```shell
 pnpm install --frozen-lockfile
 pnpm verify
+pnpm run cli --help
+pnpm measure:cli:cold-start
 ```
 
 The implementation is developed in focused pull requests. Publishing packages, creating Marketplace records, reserving names, and changing external services are separate operations.

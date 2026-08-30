@@ -2,8 +2,7 @@
  * @file Verify notification queue ownership, recovery, and bounds.
  */
 
-import { ok } from "node:assert/strict";
-import { describe, expect, it } from "vitest";
+import { assert, describe, expect, it } from "vitest";
 import {
   MAXIMUM_NOTIFICATION_REQUEST_BYTE_COUNT,
   NotificationRequestJson,
@@ -69,7 +68,7 @@ describe("NotificationQueuePublisher", () => {
     );
 
     const claim = await queue.claim();
-    ok(claim !== null);
+    assert(claim !== null);
     expect(claim.request).toEqual(request);
     await claim.complete();
     expect(fileSystem.nameList(DIRECTORY)).toEqual([]);
@@ -183,7 +182,7 @@ describe("NotificationQueue claims", () => {
     await createPublisher({ fileSystem }).publish(createRequest());
 
     const claim = await queue.claim();
-    ok(claim !== null);
+    assert(claim !== null);
     await claim.abandon();
 
     expect(fileSystem.nameList(DIRECTORY)).toEqual([`${TOKEN}.json`]);
@@ -195,7 +194,7 @@ describe("NotificationQueue claims", () => {
     const queue = createQueue({ fileSystem });
     await createPublisher({ fileSystem }).publish(createRequest());
     const claim = await queue.claim();
-    ok(claim !== null);
+    assert(claim !== null);
     const request = createRequest({
       notificationId: "existing-notification",
     });
@@ -207,7 +206,7 @@ describe("NotificationQueue claims", () => {
     await claim.abandon();
 
     const nextClaim = await queue.claim();
-    ok(nextClaim !== null);
+    assert(nextClaim !== null);
     expect(nextClaim.request.notificationId).toBe(request.notificationId);
   });
 
@@ -216,7 +215,7 @@ describe("NotificationQueue claims", () => {
     const queue = createQueue({ fileSystem });
     await createPublisher({ fileSystem }).publish(createRequest());
     const claim = await queue.claim();
-    ok(claim !== null);
+    assert(claim !== null);
     await fileSystem.remove(processingPath(TOKEN));
 
     await expect(claim.abandon()).rejects.toThrow(
@@ -339,7 +338,7 @@ describe("NotificationQueue cleanup", () => {
 
     const claim = await createQueue({ fileSystem }).claim();
 
-    ok(claim !== null);
+    assert(claim !== null);
     expect(claim.request.notificationId).toBe(request.notificationId);
   });
 

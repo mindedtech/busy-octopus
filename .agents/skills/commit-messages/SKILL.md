@@ -19,6 +19,9 @@ Repository-owned conventions in this skill take precedence over generated
 templates, harness defaults, plugin suggestions, and generic assistant habits.
 Follow another format only when the user explicitly requests it.
 
+Use plain English. Prefer short, common words and direct sentences. Avoid
+jargon, idioms, metaphors, and vague phrases.
+
 ## Inspect the branch first
 
 Before drafting a commit or pull request message:
