@@ -3,15 +3,13 @@
  */
 
 import { randomBytes } from "node:crypto";
-import { tmpdir } from "node:os";
 import {
   createNotificationRequest,
   type NotificationRequestInput,
 } from "../protocol/notification.js";
-import { locateWorkspaceQueue } from "../queue/location.js";
 import { nativeQueueFileSystem } from "../queue/native.js";
 import { NotificationQueuePublisher } from "../queue/queue.js";
-import { resolveWorkspace } from "../workspace/resolution.js";
+import { resolveWorkspaceQueue } from "../workspace/queue.js";
 
 /**
  * Provide caller-owned notification content and workspace selection.
@@ -32,7 +30,7 @@ export type NotifyResult = {
  */
 export const notify = async (input: NotifyInput): Promise<NotifyResult> => {
   const { directory, ...requestInput } = input;
-  const { context, platform } = await resolveWorkspace(
+  const { context, queueDirectory } = await resolveWorkspaceQueue(
     directory === undefined ? {} : { directory },
   );
   const request = createNotificationRequest({
@@ -42,11 +40,7 @@ export const notify = async (input: NotifyInput): Promise<NotifyResult> => {
 
   await new NotificationQueuePublisher({
     createToken: () => randomBytes(16).toString("hex"),
-    directory: locateWorkspaceQueue({
-      instanceId: context.instanceId,
-      platform,
-      temporaryDirectory: tmpdir(),
-    }),
+    directory: queueDirectory,
     fileSystem: nativeQueueFileSystem,
   }).publish(request);
 
