@@ -10,7 +10,7 @@
     "noUncheckedIndexedAccess": true,
     "strict": true,
     "target": "ES2023",
-    "types": ["node", "vscode"],
+    "types": ["mocha", "node", "vscode"],
     "useUnknownInCatchVariables": true,
     "verbatimModuleSyntax": true
   },

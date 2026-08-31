@@ -95,7 +95,7 @@ Use `z.custom<T>()` only as a last resort for values that Zod cannot fully descr
 
 ## Tests
 
-- In `*.test.ts` files, use Vitest `expect` assertions. Use Vitest `assert` only when its assertion signature is needed to narrow a value. Do not import `node:assert` in test files; this restriction does not apply to test support modules.
+- In ordinary `*.test.ts` files, use Vitest `expect` assertions. Use Vitest `assert` only when its assertion signature is needed to narrow a value. In real VS Code extension-host tests, use Chai `expect` and use Chai `assert` only when its assertion signature is needed to narrow a value. Do not import `node:assert` in test files; this restriction does not apply to test support modules.
 - Test behavior and public boundaries, including failure and cleanup paths.
 - Do not remove or weaken a failing assertion to make a test pass. Find the cause and fix the implementation or an independently invalid test.
 - Use redacted synthetic fixtures. Never copy real prompts, paths, credentials, or hook payloads into the repository.

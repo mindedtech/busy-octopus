@@ -77,6 +77,7 @@ pnpm verify
 pnpm run cli --help
 pnpm measure:cli:cold-start
 pnpm package:vsix
+pnpm test:extension
 ```
 
 The implementation is developed in focused pull requests. Publishing packages, creating Marketplace records, reserving names, and changing external services are separate operations.

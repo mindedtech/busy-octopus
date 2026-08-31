@@ -16,7 +16,7 @@ These rules apply to the entire repository.
 ## Project
 
 - Build Busy Octopus as one flat pnpm package in strict TypeScript unless an independently versioned component genuinely requires a separate package.
-- Use Biome for formatting and linting, Vitest for tests, and esbuild for the distributable CLI and VS Code extension bundles.
+- Use Biome for formatting and linting, Vitest for Node tests, the VS Code Test CLI with Mocha and Chai for real extension-host tests, and esbuild for the distributable CLI and VS Code extension bundles.
 - Publish `busy-octopus` with the `busy-octopus` executable and the `mindedtech.busy-octopus` VS Code extension from one synchronized version.
 - Keep the public core generic. Codex, Claude Code, and future tools are integrations that adapt their events into notification requests.
 - Keep the queue protocol internal until the public library contract is stable.

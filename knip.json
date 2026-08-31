@@ -1,3 +1,9 @@
 {
-  "entry": ["src/library/index.ts"]
+  "entry": [
+    ".vscode-test.mjs",
+    "src/library/index.ts",
+    "test/extension/**/*.test.ts"
+  ],
+  "ignoreDependencies": ["@vscode/test-electron"],
+  "ignoreUnresolved": ["test/extension/.*\\.test\\.ts"]
 }
