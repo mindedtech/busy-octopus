@@ -13,9 +13,10 @@ Current repository status:
 - [x] Internal workspace resolution foundation
 - [x] Internal notification queue foundation
 - [x] Programmatic notification library foundation
+- [x] VS Code queue consumer foundation
 - [ ] Working notifier
 - [x] CLI
-- [ ] VS Code extension
+- [ ] Visible VS Code notifications
 
 ## Library
 
@@ -58,6 +59,14 @@ busy-octopus doctor
 
 The diagnostic output reports only whether workspace resolution and queue routing succeeded. It does not print workspace paths, display metadata, notification content, or queue identifiers.
 
+## VS Code extension
+
+The extension foundation runs in the local VS Code UI host and consumes queues for trusted workspace folders through `workspace.fs`. This lets native, WSL, and Dev Container workspaces use the same local bridge while keeping queue access in the editor process.
+
+The extension does not consume queues in Restricted Mode or virtual workspaces. It tracks workspace-folder changes, cancels polling when a folder closes, and reports only fixed, content-free diagnostic codes.
+
+This branch does not display notifications. Editor delivery and focus rules are the next implementation step.
+
 ## Development
 
 Use the Dev Container, or install Node.js 22.12 or later and the pnpm version declared in `package.json`.
@@ -67,6 +76,7 @@ pnpm install --frozen-lockfile
 pnpm verify
 pnpm run cli --help
 pnpm measure:cli:cold-start
+pnpm package:vsix
 ```
 
 The implementation is developed in focused pull requests. Publishing packages, creating Marketplace records, reserving names, and changing external services are separate operations.
