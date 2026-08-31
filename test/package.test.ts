@@ -64,6 +64,7 @@ const allowFileList = [
   "LICENSE",
   "README.md",
   "dist/cli/main.js",
+  "dist/extension/extension.cjs",
   "dist/library/index.d.ts",
   "dist/library/index.js",
   "dist/library/notify.d.ts",
