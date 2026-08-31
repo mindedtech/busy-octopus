@@ -9,6 +9,8 @@ These rules cover design choices that TypeScript, Biome, and Vitest do not fully
 
 Do not insert line breaks solely to enforce a source width. Keep each Markdown paragraph and list item on one source line, and use line breaks in code documentation only when they express semantic structure required by the code documentation conventions.
 
+Use blank lines to separate logical phases within functions and substantial methods in object literals. Keep short, closely related declarations and scalar properties together; do not insert spacing mechanically after every statement.
+
 Before changing code, read the nearest implementation and tests for the same kind of behavior. Follow local precedent unless it conflicts with this skill or a documented invariant. Afterward, review the result against both the precedent and the checks; diagnostics do not replace design review.
 
 When one style violation is found, scan every in-scope authored file for the same pattern before presenting the correction.
@@ -45,7 +47,7 @@ Use `z.custom<T>()` only as a last resort for values that Zod cannot fully descr
 
 ## Functions and control flow
 
-- Prefer arrow functions for standalone functions and callbacks. Use function declarations where required, such as generators or simple assertion functions, and normal VS Code lifecycle exports where clearer.
+- Prefer arrow functions for standalone functions and callbacks. Use function declarations only where required, such as generators or simple assertion functions.
 - Define class methods as arrow-function fields so they retain their instance binding when passed as callbacks. Constructors and accessors keep their language-defined syntax.
 - Do not use `else`. Use an early return or otherwise flatten the control flow.
 - Use `switch` for exhaustive matching over discriminated unions, enums, and other closed value sets. Use `if` for independent predicates.
