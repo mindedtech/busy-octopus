@@ -1,5 +1,5 @@
 /**
- * @file Define generic versioned notification requests and their JSON codec.
+ * @file Generic versioned notification requests and their JSON codec.
  */
 
 import { ok } from "node:assert/strict";
@@ -15,19 +15,19 @@ const utf8Encoder = new TextEncoder();
 const NotificationIdentifier = boundText({
   domain: "Notification identifier",
   maximumCodePointCount: 128,
-}).describe("Identify a notification for duplicate suppression.");
+}).describe("Stable notification identity for duplicate suppression.");
 
 const NotificationTitle = boundText({
   domain: "Notification title",
   maximumCodePointCount: 120,
-}).describe("Provide the primary notification text.");
+}).describe("Primary notification text.");
 
 const NotificationBody = boundText({
   domain: "Notification body",
   maximumCodePointCount: 1_024,
 })
   .nullable()
-  .describe("Provide notification detail when available.");
+  .describe("Notification detail when available.");
 
 const NotificationTimestamp = z.iso
   .datetime({ precision: 3 })
@@ -41,40 +41,36 @@ const NotificationTimestamp = z.iso
     },
     { error: "Notification timestamp must be a canonical UTC instant." },
   )
-  .describe(
-    "Record creation time as canonical UTC with millisecond precision.",
-  );
+  .describe("Canonical UTC creation time with millisecond precision.");
 
 export const NotificationSource = z
   .strictObject({
     kind: boundText({
       domain: "Notification source kind",
       maximumCodePointCount: 64,
-    }).describe("Classify the generic source of a notification."),
+    }).describe("Generic notification source category."),
     name: boundText({
       domain: "Notification source name",
       maximumCodePointCount: 120,
-    }).describe("Name the source for user-visible context."),
+    }).describe("User-visible notification source name."),
   })
-  .describe(
-    "Describe a notification source without integration-specific data.",
-  );
+  .describe("Notification source without integration-specific data.");
 
 export type NotificationSource = z.infer<typeof NotificationSource>;
 
 export const NotificationRequestInput = z
   .strictObject({
     notificationId: NotificationIdentifier.optional().describe(
-      "Provide a retry-stable identifier or request generation by omission.",
+      "Retry-stable identifier; omission requests identifier generation.",
     ),
     title: NotificationTitle,
     body: NotificationBody,
     workspace: WorkspaceContext,
     source: NotificationSource.nullable().describe(
-      "Describe the notification source when available.",
+      "Notification source when available.",
     ),
   })
-  .describe("Provide caller-owned notification request data.");
+  .describe("Caller-owned notification request data.");
 
 export type NotificationRequestInput = z.infer<typeof NotificationRequestInput>;
 
@@ -82,14 +78,14 @@ export const NotificationRequest = z
   .strictObject({
     schemaVersion: z
       .literal(1)
-      .describe("Select notification request protocol version 1."),
+      .describe("Notification request protocol version 1."),
     notificationId: NotificationIdentifier,
     creationTime: NotificationTimestamp,
     title: NotificationTitle,
     body: NotificationBody,
     workspace: WorkspaceContext,
     source: NotificationSource.nullable().describe(
-      "Describe the notification source when available.",
+      "Notification source when available.",
     ),
   })
   .refine(
@@ -100,7 +96,7 @@ export const NotificationRequest = z
       error: `Notification request must not exceed ${MAXIMUM_NOTIFICATION_REQUEST_BYTE_COUNT} UTF-8 bytes.`,
     },
   )
-  .describe("Represent a validated version 1 notification request.");
+  .describe("Validated version 1 notification request.");
 
 export type NotificationRequest = z.infer<typeof NotificationRequest>;
 
@@ -114,7 +110,7 @@ const NotificationRequestJsonText = z
       error: `Notification request JSON must not exceed ${MAXIMUM_NOTIFICATION_REQUEST_BYTE_COUNT} UTF-8 bytes.`,
     },
   )
-  .describe("Carry a size-bounded notification request as JSON text.");
+  .describe("Size-bounded notification request JSON text.");
 
 export const NotificationRequestJson = z
   .codec(NotificationRequestJsonText, z.unknown(), {
@@ -138,25 +134,25 @@ export const NotificationRequestJson = z
     },
   })
   .pipe(NotificationRequest)
-  .describe("Encode and decode a version 1 notification request as JSON.");
+  .describe("Version 1 notification request JSON codec.");
 
 export type NotificationRequestJson = z.input<typeof NotificationRequestJson>;
+
+const NotificationRequestCreation = NotificationRequestInput.transform(
+  ({ body, notificationId, source, title, workspace }) => ({
+    schemaVersion: 1 as const,
+    notificationId: notificationId ?? randomUUID(),
+    creationTime: new Date().toISOString(),
+    title,
+    body,
+    workspace,
+    source,
+  }),
+).pipe(NotificationRequest);
 
 /**
  * Create a validated notification request with protocol-owned metadata.
  */
 export const createNotificationRequest = (
   input: NotificationRequestInput,
-): NotificationRequest => {
-  const requestInput = NotificationRequestInput.parse(input);
-
-  return NotificationRequest.parse({
-    schemaVersion: 1,
-    notificationId: requestInput.notificationId ?? randomUUID(),
-    creationTime: new Date().toISOString(),
-    title: requestInput.title,
-    body: requestInput.body,
-    workspace: requestInput.workspace,
-    source: requestInput.source,
-  });
-};
+): NotificationRequest => NotificationRequestCreation.parse(input);
