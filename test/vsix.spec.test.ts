@@ -36,6 +36,12 @@ it("targets the Busy Octopus UI extension", async () => {
         untrustedWorkspaces: z.object({ supported: z.literal(false) }),
         virtualWorkspaces: z.object({ supported: z.literal(false) }),
       }),
+      contributes: z.object({
+        commands: z.array(z.object({ command: z.string() })),
+        configuration: z.object({
+          properties: z.record(z.string(), z.object({ default: z.boolean() })),
+        }),
+      }),
       extensionKind: z.tuple([z.literal("ui")]),
       name: z.literal("busy-octopus"),
       publisher: z.literal("mindedtech"),
@@ -48,6 +54,16 @@ it("targets the Busy Octopus UI extension", async () => {
     capabilities: {
       untrustedWorkspaces: { supported: false },
       virtualWorkspaces: { supported: false },
+    },
+    contributes: {
+      commands: [{ command: "busyOctopus.showTestNotification" }],
+      configuration: {
+        properties: {
+          "busyOctopus.disableDetails": { default: false },
+          "busyOctopus.disableFocusSuppression": { default: false },
+          "busyOctopus.editor.enable": { default: false },
+        },
+      },
     },
     extensionKind: ["ui"],
     name: "busy-octopus",

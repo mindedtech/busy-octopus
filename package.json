@@ -29,6 +29,35 @@
   "categories": [
     "Other"
   ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "busyOctopus.showTestNotification",
+        "title": "Show Test Notification",
+        "category": "Busy Octopus"
+      }
+    ],
+    "configuration": {
+      "title": "Busy Octopus",
+      "properties": {
+        "busyOctopus.editor.enable": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show Busy Octopus notifications in VS Code."
+        },
+        "busyOctopus.disableDetails": {
+          "type": "boolean",
+          "default": false,
+          "description": "Hide notification details."
+        },
+        "busyOctopus.disableFocusSuppression": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show notifications even while the VS Code window has focus."
+        }
+      }
+    }
+  },
   "bin": {
     "busy-octopus": "./dist/cli/main.js"
   },
@@ -74,6 +103,7 @@
     "@types/chai": "5.2.3",
     "@types/mocha": "10.0.10",
     "@types/node": "22.20.1",
+    "@types/sinon": "22.0.0",
     "@types/vscode": "1.134.0",
     "@vscode/test-cli": "0.0.15",
     "@vscode/test-electron": "3.1.0",
@@ -82,6 +112,7 @@
     "esbuild": "0.28.2",
     "fflate": "0.8.3",
     "knip": "6.32.3",
+    "sinon": "22.1.0",
     "typescript": "7.0.2",
     "vitest": "4.1.11"
   },

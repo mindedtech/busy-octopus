@@ -15,11 +15,8 @@ describe("locateRemoteWorkspaceQueue", () => {
 
     expect(
       locateRemoteWorkspaceQueue({
-        remoteTemporaryDirectory: "/tmp",
-        workspace: {
-          path: "/workspaces/project",
-          useRemotePath: (path) => `vscode-remote://container${path}`,
-        },
+        instanceId,
+        useRemotePath: (path) => `vscode-remote://container${path}`,
       }),
     ).toBe(`vscode-remote://container/tmp/busy-octopus/v1/${instanceId}`);
   });
