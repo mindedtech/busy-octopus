@@ -8,7 +8,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.12.0",
+    "node": ">=22",
     "vscode": "^1.134.0"
   },
   "main": "./dist/extension/extension.cjs",
@@ -49,9 +49,9 @@
   "scripts": {
     "build": "pnpm clean && pnpm build:lib && pnpm build:cli && pnpm build:extension",
     "build:lib": "tsc --project tsconfig.build.json",
-    "build:cli": "esbuild src/cli/main.ts --bundle --format=esm --packages=external --platform=node --target=node22.12 --outfile=dist/cli/main.js",
-    "build:extension": "esbuild src/extension/extension.ts --bundle --external:vscode --format=cjs --minify --platform=node --target=node22.12 --outfile=dist/extension/extension.cjs",
-    "build:test:extension": "esbuild test/extension/*.test.ts --bundle --external:vscode --format=cjs --out-extension:.js=.cjs --outdir=dist/test/extension --platform=node --sourcemap --target=node22.12",
+    "build:cli": "esbuild src/cli/main.ts --bundle --format=esm --packages=external --platform=node --target=node22 --outfile=dist/cli/main.js",
+    "build:extension": "esbuild src/extension/extension.ts --bundle --external:vscode --format=cjs --minify --platform=node --target=node22 --outfile=dist/extension/extension.cjs",
+    "build:test:extension": "esbuild test/extension/*.test.ts --bundle --external:vscode --format=cjs --out-extension:.js=.cjs --outdir=dist/test/extension --platform=node --sourcemap --target=node22",
     "check": "pnpm check:biome && pnpm check:types && pnpm check:knip",
     "check:biome": "biome check .",
     "check:fix": "biome check --write .",
