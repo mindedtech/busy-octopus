@@ -10,10 +10,11 @@
     "noUncheckedIndexedAccess": true,
     "strict": true,
     "target": "ES2023",
-    "types": ["mocha", "node", "vscode"],
+    "types": ["node"],
     "useUnknownInCatchVariables": true,
     "verbatimModuleSyntax": true
   },
+  "exclude": ["src/extension/**/*.e2e.test.ts"],
   "include": [
     "scripts/**/*.ts",
     "src/**/*.ts",

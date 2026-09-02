@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["mocha", "node"]
+  },
+  "exclude": [],
+  "include": ["src/extension/**/*.e2e.test.ts"]
+}
