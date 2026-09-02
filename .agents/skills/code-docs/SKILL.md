@@ -9,7 +9,9 @@ Document intent and domain meaning that types and implementation do not already 
 
 ## Writing
 
-- Use imperative descriptions: `Read the pending request`, not `Reads` or `Returns`.
+- Describe callable behavior with the verb that names the actual operation: `Read the pending request`, not `Reads` or `Returns`.
+- Describe types, properties, parameters, and values with direct domain language rather than forcing an action verb.
+- Avoid mechanically prefixing descriptions with filler such as `Use`, `Provide`, `Define`, `Represent`, `Describe`, or `Carry`. Use such a verb only when it names the actual behavior.
 - End every description with a period.
 - Describe one unified purpose. Do not enumerate properties, exports, or capabilities already expressed by the type.
 - Avoid filler and implementation plumbing. Describe what a value means or an operation accomplishes.
@@ -46,7 +48,7 @@ Document intent and domain meaning that types and implementation do not already 
 
 Before presenting documentation, verify:
 
-1. Descriptions use imperative form, end with periods, and do not enumerate structure already represented by types.
+1. Callable descriptions name their actual operation; type and value descriptions use direct domain language. No description has a mechanical filler prefix. All descriptions end with periods and do not enumerate structure already represented by types.
 2. JSDoc blocks are multi-line and every authored TypeScript file begins with an `@file` block, immediately after the shebang when present.
 3. Parameter and result tags add information rather than restating names and types.
 4. Every direct throw in a documented body has a precise `@throws`, with no documentation for exceptions thrown only by callees.
