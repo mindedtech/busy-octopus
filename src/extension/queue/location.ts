@@ -1,30 +1,30 @@
 /**
- * @file Derive remote queue resources for VS Code workspaces.
+ * @file Remote queue resources for VS Code workspaces.
  */
 
 import { locateWorkspaceQueue } from "../../queue/location.js";
-import { identifyWorkspace } from "../../workspace/identity.js";
 
 /**
  * Locate a remote producer queue through its workspace filesystem provider.
  */
 export const locateRemoteWorkspaceQueue = <Resource>({
-  remoteTemporaryDirectory = "/tmp",
-  workspace,
+  instanceId,
+  useRemotePath,
 }: {
-  remoteTemporaryDirectory?: string;
-  workspace: {
-    path: string;
-    useRemotePath: (path: string) => Resource;
-  };
+  /**
+   * Stable identity of the remote workspace.
+   */
+  instanceId: string;
+
+  /**
+   * Conversion from a remote POSIX path to a filesystem resource.
+   */
+  useRemotePath: (path: string) => Resource;
 }): Resource =>
-  workspace.useRemotePath(
+  useRemotePath(
     locateWorkspaceQueue({
-      instanceId: identifyWorkspace({
-        path: workspace.path,
-        platform: "posix",
-      }).instanceId,
+      instanceId,
       platform: "posix",
-      temporaryDirectory: remoteTemporaryDirectory,
+      temporaryDirectory: "/tmp",
     }),
   );

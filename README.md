@@ -14,13 +14,13 @@ Current repository status:
 - [x] Internal notification queue foundation
 - [x] Programmatic notification library foundation
 - [x] VS Code queue consumer foundation
-- [ ] Working notifier
+- [x] Working notifier
 - [x] CLI
-- [ ] Visible VS Code notifications
+- [x] Visible VS Code notifications
 
 ## Library
 
-The package exposes a named asynchronous `notify` function for publishing a generic request to the OS-temporary queue associated with a workspace. The package is not published yet, and this foundation does not display notifications until the VS Code extension consumer exists.
+The package exposes a named asynchronous `notify` function for publishing a generic request to the OS-temporary queue associated with a workspace. The package is not published yet. The VS Code extension can consume and display the request when editor notifications are enabled.
 
 ```typescript
 import { notify } from "busy-octopus";
@@ -41,7 +41,7 @@ The promise rejects when input validation, workspace resolution, or queue public
 
 ## CLI
 
-The package provides the same notification publisher as the `busy-octopus` executable. It currently writes to the internal local queue; visible delivery still requires the future VS Code extension consumer.
+The package provides the same notification publisher as the `busy-octopus` executable. It writes to the internal local queue for delivery by the VS Code extension.
 
 ```shell
 busy-octopus notify \
@@ -61,11 +61,17 @@ The diagnostic output reports only whether workspace resolution and queue routin
 
 ## VS Code extension
 
-The extension foundation runs in the local VS Code UI host and consumes queues for trusted workspace folders through `workspace.fs`. This lets native, WSL, and Dev Container workspaces use the same local bridge while keeping queue access in the editor process.
+The extension runs in the local VS Code UI host and consumes queues for trusted workspace folders through `workspace.fs`. This lets native, WSL, and Dev Container workspaces use the same local bridge while keeping queue access in the editor process.
 
 The extension does not consume queues in Restricted Mode or virtual workspaces. It tracks workspace-folder changes, cancels polling when a folder closes, and reports only fixed, content-free diagnostic codes.
 
-This branch does not display notifications. Editor delivery and focus rules are the next implementation step.
+| Setting | Default | Effect when enabled |
+| --- | --- | --- |
+| `busyOctopus.editor.enable` | `false` | Show notifications in VS Code. |
+| `busyOctopus.disableFocusSuppression` | `false` | Show notifications while the VS Code window has focus. |
+| `busyOctopus.disableDetails` | `false` | Hide notification details. |
+
+Run **Busy Octopus: Show Test Notification** from the Command Palette to send synthetic content through the normal notification delivery path and settings.
 
 ## Development
 

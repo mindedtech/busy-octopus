@@ -5,8 +5,8 @@
 import { setTimeout } from "node:timers/promises";
 import { assert, expect } from "chai";
 import { extensions, Uri, workspace } from "vscode";
-import { notify } from "../../src/library/notify.js";
-import { resolveWorkspaceQueue } from "../../src/workspace/queue.js";
+import { notify } from "../library/notify.js";
+import { resolveWorkspaceQueue } from "../workspace/queue.js";
 
 const awaitQueueConsumption = async (queueUri: Uri): Promise<void> => {
   const deadline = Date.now() + 10_000;
@@ -26,9 +26,10 @@ const awaitQueueConsumption = async (queueUri: Uri): Promise<void> => {
 };
 
 suite("VS Code extension", () => {
-  test("consumes a notification request", async () => {
+  test("activates notification delivery and consumes a request", async () => {
     const folder = workspace.workspaceFolders?.[0];
     assert.exists(folder, "VS Code test workspace is missing.");
+
     expect(
       workspace.isTrusted,
       "VS Code test workspace is not trusted.",
@@ -36,7 +37,9 @@ suite("VS Code extension", () => {
 
     const extension = extensions.getExtension("mindedtech.busy-octopus");
     assert.exists(extension, "Busy Octopus extension is missing.");
+
     await extension.activate();
+
     expect(extension.isActive, "Busy Octopus extension is inactive.").to.equal(
       true,
     );
@@ -45,6 +48,7 @@ suite("VS Code extension", () => {
       directory: folder.uri.fsPath,
     });
     const queueUri = Uri.file(queueDirectory);
+
     await workspace.fs.createDirectory(queueUri);
 
     try {

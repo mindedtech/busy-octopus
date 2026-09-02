@@ -18,7 +18,7 @@ process.once("exit", () => {
 export default defineConfig({
   env: { ELECTRON_RUN_AS_NODE: undefined },
   extensionDevelopmentPath: ".",
-  files: "dist/test/extension/**/*.test.cjs",
+  files: "dist/test/extension/**/*.e2e.test.cjs",
   launchArgs: [
     "--disable-extensions",
     "--disable-experiments",

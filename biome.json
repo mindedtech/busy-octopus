@@ -23,6 +23,9 @@
             "syntax": "shorthand"
           }
         }
+      },
+      "nursery": {
+        "useExhaustiveSwitchCases": "error"
       }
     }
   },

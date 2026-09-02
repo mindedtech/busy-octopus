@@ -1,5 +1,5 @@
 /**
- * @file Create the VS Code extension archive from a clean generated manifest.
+ * @file VS Code extension archive creation from a clean generated manifest.
  */
 
 import { cp, mkdir, rm, writeFile } from "node:fs/promises";
@@ -18,6 +18,26 @@ const ExtensionPackage = z.object({
     virtualWorkspaces: z.object({ supported: z.boolean() }),
   }),
   categories: z.array(z.string()),
+  contributes: z.object({
+    commands: z.array(
+      z.object({
+        category: z.string(),
+        command: z.string(),
+        title: z.string(),
+      }),
+    ),
+    configuration: z.object({
+      properties: z.record(
+        z.string(),
+        z.object({
+          default: z.boolean(),
+          description: z.string(),
+          type: z.literal("boolean"),
+        }),
+      ),
+      title: z.string(),
+    }),
+  }),
   description: z.string(),
   displayName: z.string(),
   engines: z.object({ vscode: z.string() }),
@@ -33,6 +53,7 @@ const ExtensionPackage = z.object({
 const repositoryDirectory = process.cwd();
 const artifactDirectory = join(repositoryDirectory, "artifacts");
 const stageDirectory = join(artifactDirectory, "vsix-stage");
+
 const manifest = ExtensionPackage.parse(packageJson);
 
 await rm(stageDirectory, { force: true, recursive: true });
