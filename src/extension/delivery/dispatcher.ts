@@ -66,7 +66,7 @@ export class NotificationDeliveryDispatcher implements Disposable {
   }): Promise<void> => {
     const config = this.#readDeliveryConfig();
 
-    if (this.#readFocus() && !config.disableFocusSuppression) {
+    if (this.#readFocus() && config.focusSuppression.enable) {
       return;
     }
 
@@ -109,7 +109,7 @@ export class NotificationDeliveryDispatcher implements Disposable {
   };
 
   #prepareNotification = ({
-    config: { disableDetails },
+    config: { detail },
     notification,
   }: {
     config: NotificationDeliveryConfig;
@@ -117,7 +117,7 @@ export class NotificationDeliveryDispatcher implements Disposable {
   }): NotificationRequest => ({
     ...notification,
     body:
-      disableDetails || notification.body === null
+      !detail.enable || notification.body === null
         ? null
         : this.#sanitizeText(notification.body),
     title: this.#sanitizeText(notification.title),

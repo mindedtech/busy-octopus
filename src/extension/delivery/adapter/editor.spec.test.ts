@@ -26,10 +26,14 @@ const target = {
 } satisfies NotificationDeliveryTarget;
 
 const config = {
-  disableDetails: false,
-  disableFocusSuppression: false,
+  detail: { enable: true },
+  focusSuppression: { enable: true },
   editor: {
     enable: false,
+  },
+  windows: {
+    notification: { enable: true, sound: { enable: false } },
+    taskbar: { flash: { enable: true } },
   },
 } satisfies NotificationDeliveryConfig;
 

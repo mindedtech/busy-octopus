@@ -29,10 +29,14 @@ const target = {
 } satisfies NotificationDeliveryTarget;
 
 const config = {
-  disableDetails: false,
-  disableFocusSuppression: false,
+  detail: { enable: true },
+  focusSuppression: { enable: true },
   editor: {
     enable: false,
+  },
+  windows: {
+    notification: { enable: true, sound: { enable: false } },
+    taskbar: { flash: { enable: true } },
   },
 } satisfies NotificationDeliveryConfig;
 
@@ -119,7 +123,7 @@ describe("NotificationDeliveryDispatcher", () => {
     const dispatcher = new NotificationDeliveryDispatcher({
       adapterList: [{ allow: () => true, deliver, dispose: vi.fn() }],
       diagnose: vi.fn(),
-      readConfig: () => ({ ...config, disableFocusSuppression: true }),
+      readConfig: () => ({ ...config, focusSuppression: { enable: false } }),
       readFocus: () => true,
     });
     const signal = new AbortController().signal;
@@ -127,7 +131,7 @@ describe("NotificationDeliveryDispatcher", () => {
     await dispatcher.deliver({ notification: request, signal, target });
 
     expect(deliver).toHaveBeenCalledWith({
-      config: { ...config, disableFocusSuppression: true },
+      config: { ...config, focusSuppression: { enable: false } },
       notification: request,
       signal,
       target,
@@ -139,7 +143,7 @@ describe("NotificationDeliveryDispatcher", () => {
     const dispatcher = new NotificationDeliveryDispatcher({
       adapterList: [{ allow: () => true, deliver, dispose: vi.fn() }],
       diagnose: vi.fn(),
-      readConfig: () => ({ ...config, disableDetails: true }),
+      readConfig: () => ({ ...config, detail: { enable: false } }),
       readFocus: () => false,
     });
     const signal = new AbortController().signal;
@@ -147,7 +151,7 @@ describe("NotificationDeliveryDispatcher", () => {
     await dispatcher.deliver({ notification: request, signal, target });
 
     expect(deliver).toHaveBeenCalledWith({
-      config: { ...config, disableDetails: true },
+      config: { ...config, detail: { enable: false } },
       notification: { ...request, body: null },
       signal,
       target,

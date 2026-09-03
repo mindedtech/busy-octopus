@@ -26,8 +26,8 @@ suite("Editor notification delivery", () => {
     const config = workspace.getConfiguration("busyOctopus");
     await config.update("editor.enable", false, ConfigurationTarget.Workspace);
     await config.update(
-      "disableFocusSuppression",
-      true,
+      "focusSuppression.enable",
+      false,
       ConfigurationTarget.Workspace,
     );
     const showInformationMessage = stub(
@@ -55,7 +55,7 @@ suite("Editor notification delivery", () => {
         ConfigurationTarget.Workspace,
       );
       await config.update(
-        "disableFocusSuppression",
+        "focusSuppression.enable",
         undefined,
         ConfigurationTarget.Workspace,
       );

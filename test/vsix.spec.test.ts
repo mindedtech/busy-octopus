@@ -3,15 +3,21 @@
  */
 
 import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { unzipSync } from "fflate";
 import { expect, it } from "vitest";
 import { z } from "zod";
+import packageJson from "../package.json" with { type: "json" };
+
+const { name, version } = packageJson;
+const artifactPath = join("artifacts", `${name}-${version}.vsix`);
 
 const fileList = [
   "[Content_Types].xml",
   "extension.vsixmanifest",
   "extension/LICENSE.txt",
   "extension/dist/extension/extension.cjs",
+  "extension/native/windows-notify.ps1",
   "extension/package.json",
   "extension/readme.md",
 ];
@@ -19,17 +25,13 @@ const fileList = [
 it("contains only the extension runtime and required metadata", async () => {
   expect(
     Object.keys(
-      unzipSync(
-        new Uint8Array(await readFile("artifacts/busy-octopus-0.0.0.vsix")),
-      ),
+      unzipSync(new Uint8Array(await readFile(artifactPath))),
     ).toSorted(),
   ).toEqual(fileList);
 });
 
 it("targets the Busy Octopus UI extension", async () => {
-  const archive = unzipSync(
-    new Uint8Array(await readFile("artifacts/busy-octopus-0.0.0.vsix")),
-  );
+  const archive = unzipSync(new Uint8Array(await readFile(artifactPath)));
   const manifest = z
     .object({
       capabilities: z.object({
@@ -59,14 +61,17 @@ it("targets the Busy Octopus UI extension", async () => {
       commands: [{ command: "busyOctopus.showTestNotification" }],
       configuration: {
         properties: {
-          "busyOctopus.disableDetails": { default: false },
-          "busyOctopus.disableFocusSuppression": { default: false },
+          "busyOctopus.detail.enable": { default: true },
+          "busyOctopus.focusSuppression.enable": { default: true },
           "busyOctopus.editor.enable": { default: false },
+          "busyOctopus.windows.notification.enable": { default: true },
+          "busyOctopus.windows.notification.sound.enable": { default: false },
+          "busyOctopus.windows.taskbar.flash.enable": { default: true },
         },
       },
     },
     extensionKind: ["ui"],
     name: "busy-octopus",
     publisher: "mindedtech",
-  });
+  } satisfies typeof manifest);
 });

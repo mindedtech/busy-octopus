@@ -7,6 +7,7 @@
 import {
   commands,
   type ExtensionContext,
+  env,
   Uri,
   type WorkspaceFolder,
   window,
@@ -18,12 +19,18 @@ import { NotificationQueue } from "../queue/queue.js";
 import { identifyWorkspace } from "../workspace/identity.js";
 import { resolveWorkspaceQueue } from "../workspace/queue.js";
 import { EditorNotificationAdapter } from "./delivery/adapter/editor.js";
-import { NotificationDeliveryConfig } from "./delivery/config.js";
+import { WindowsNotificationAdapter } from "./delivery/adapter/windows/notification.js";
+import type { NotificationDeliveryAdapter } from "./delivery/adapter.js";
+import {
+  NotificationDeliveryConfig,
+  type NotificationDeliveryConfigInput,
+} from "./delivery/config.js";
 import { NotificationDeliveryDispatcher } from "./delivery/dispatcher.js";
 import { ExtensionDiagnosticReporter } from "./diagnostic.js";
 import { WorkspaceQueueConsumer } from "./queue/consumer.js";
 import { WorkspaceQueueFileSystem } from "./queue/file-system.js";
 import { locateRemoteWorkspaceQueue } from "./queue/location.js";
+import { showWindowsNotification } from "./windows/bridge.js";
 import { ExtensionWorkspaceConsumer } from "./workspace-consumer.js";
 
 const resolveExtensionWorkspace = async ({
@@ -61,7 +68,7 @@ const resolveExtensionWorkspace = async ({
         label: labelResult.success ? labelResult.data : null,
       },
       instanceId,
-    }),
+    } satisfies WorkspaceContext),
     queueDirectory: locateRemoteWorkspaceQueue({
       instanceId,
       useRemotePath: (path) => uri.with({ fragment: "", path, query: "" }),
@@ -106,12 +113,29 @@ const readDeliveryConfig = (): NotificationDeliveryConfig => {
   const config = workspace.getConfiguration("busyOctopus");
 
   return NotificationDeliveryConfig.parse({
-    disableDetails: config.get<unknown>("disableDetails"),
-    disableFocusSuppression: config.get<unknown>("disableFocusSuppression"),
-    editor: {
-      enable: config.get<unknown>("editor.enable"),
+    detail: {
+      enable: config.get<boolean>("detail.enable"),
     },
-  });
+    focusSuppression: {
+      enable: config.get<boolean>("focusSuppression.enable"),
+    },
+    editor: {
+      enable: config.get<boolean>("editor.enable"),
+    },
+    windows: {
+      notification: {
+        enable: config.get<boolean>("windows.notification.enable"),
+        sound: {
+          enable: config.get<boolean>("windows.notification.sound.enable"),
+        },
+      },
+      taskbar: {
+        flash: {
+          enable: config.get<boolean>("windows.taskbar.flash.enable"),
+        },
+      },
+    },
+  } satisfies NotificationDeliveryConfigInput);
 };
 
 /**
@@ -123,10 +147,25 @@ export const activate = (context: ExtensionContext): void => {
     window,
   );
 
-  const editorDelivery = new EditorNotificationAdapter(window);
+  const adapterList: NotificationDeliveryAdapter[] = [
+    new EditorNotificationAdapter(window),
+  ];
+
+  if (process.platform === "win32") {
+    const scriptPath = context.asAbsolutePath("native/windows-notify.ps1");
+
+    adapterList.push(
+      new WindowsNotificationAdapter({
+        appName: env.appName,
+        scriptPath,
+        showNotification: showWindowsNotification,
+        uriScheme: env.uriScheme,
+      }),
+    );
+  }
 
   const dispatcher = new NotificationDeliveryDispatcher({
-    adapterList: [editorDelivery],
+    adapterList,
     diagnose: diagnosticReporter.report,
     readConfig: readDeliveryConfig,
     readFocus: () => window.state.focused,
