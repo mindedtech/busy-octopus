@@ -55,20 +55,43 @@ const artifactDirectory = join(repositoryDirectory, "artifacts");
 const stageDirectory = join(artifactDirectory, "vsix-stage");
 
 const manifest = ExtensionPackage.parse(packageJson);
+const artifactPath = join(
+  artifactDirectory,
+  `${manifest.name}-${manifest.version}.vsix`,
+);
 
 await rm(stageDirectory, { force: true, recursive: true });
-await mkdir(join(stageDirectory, "dist", "extension"), { recursive: true });
+await Promise.all([
+  mkdir(join(stageDirectory, "dist", "extension"), { recursive: true }),
+  mkdir(join(stageDirectory, "native"), { recursive: true }),
+]);
 
 await Promise.all([
   cp(join(repositoryDirectory, "LICENSE"), join(stageDirectory, "LICENSE")),
   cp(join(repositoryDirectory, "README.md"), join(stageDirectory, "README.md")),
+  cp(
+    join(repositoryDirectory, "native", "windows-notify.ps1"),
+    join(stageDirectory, "native", "windows-notify.ps1"),
+  ),
   cp(
     join(repositoryDirectory, "dist", "extension", "extension.cjs"),
     join(stageDirectory, "dist", "extension", "extension.cjs"),
   ),
   writeFile(
     join(stageDirectory, "package.json"),
-    `${JSON.stringify({ ...manifest, files: ["dist/extension/extension.cjs", "LICENSE", "README.md"] }, null, 2)}\n`,
+    `${JSON.stringify(
+      {
+        ...manifest,
+        files: [
+          "dist/extension/extension.cjs",
+          "native/windows-notify.ps1",
+          "LICENSE",
+          "README.md",
+        ],
+      } satisfies typeof manifest & { files: string[] },
+      null,
+      2,
+    )}\n`,
   ),
 ]);
 
@@ -77,6 +100,6 @@ await mkdir(artifactDirectory, { recursive: true });
 await createVSIX({
   cwd: stageDirectory,
   dependencies: false,
-  packagePath: join(artifactDirectory, "busy-octopus-0.0.0.vsix"),
+  packagePath: artifactPath,
   rewriteRelativeLinks: false,
 });

@@ -4,6 +4,7 @@
 
 import { describe, expect, it, vi } from "vitest";
 import { createNotificationRequest } from "../../../protocol/notification.js";
+import type { NotificationDeliveryTarget } from "../adapter.js";
 import type { NotificationDeliveryConfig } from "../config.js";
 import { EditorNotificationAdapter } from "./editor.js";
 
@@ -18,11 +19,21 @@ const notification = createNotificationRequest({
   },
 });
 
+const target = {
+  authority: "",
+  path: "/synthetic-workspace",
+  scheme: "file",
+} satisfies NotificationDeliveryTarget;
+
 const config = {
-  disableDetails: false,
-  disableFocusSuppression: false,
+  detail: { enable: true },
+  focusSuppression: { enable: true },
   editor: {
     enable: false,
+  },
+  windows: {
+    notification: { enable: true, sound: { enable: false } },
+    taskbar: { flash: { enable: true } },
   },
 } satisfies NotificationDeliveryConfig;
 
@@ -59,6 +70,7 @@ describe("EditorNotificationAdapter", () => {
       config,
       notification,
       signal: new AbortController().signal,
+      target,
     });
 
     expect(showInformationMessage).toHaveBeenCalledWith(
@@ -74,6 +86,7 @@ describe("EditorNotificationAdapter", () => {
       config,
       notification: { ...notification, body: null },
       signal: new AbortController().signal,
+      target,
     });
 
     expect(showInformationMessage).toHaveBeenCalledWith("Agent finished");
@@ -92,6 +105,7 @@ describe("EditorNotificationAdapter", () => {
       config,
       notification,
       signal: abortController.signal,
+      target,
     });
 
     expect(showInformationMessage).not.toHaveBeenCalled();
@@ -111,6 +125,7 @@ describe("EditorNotificationAdapter", () => {
         title: "Busy Octopus",
       },
       signal: new AbortController().signal,
+      target,
     });
 
     expect(showInformationMessage).toHaveBeenCalledWith(

@@ -16,10 +16,13 @@ describe("ExtensionDiagnosticReporter", () => {
     diagnosticReporter.report("queue-access-error");
     diagnosticReporter.report("queue-access-error");
     diagnosticReporter.report("request-consumer-error");
+    diagnosticReporter.report("taskbar-process-error");
+    diagnosticReporter.report("taskbar-process-error");
 
     expect(output.warn.mock.calls).toEqual([
       ["queue-access-error"],
       ["request-consumer-error"],
+      ["taskbar-process-error"],
     ]);
     expect(showErrorMessage).not.toHaveBeenCalled();
   });

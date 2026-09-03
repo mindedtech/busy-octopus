@@ -10,7 +10,7 @@ import type { DiagnosticCode } from "../diagnostic.js";
 /**
  * Claim one request at a time and release ownership on consumer failure.
  */
-export class WorkspaceQueueConsumer {
+export class WorkspaceQueueConsumer implements Disposable {
   #abortController = new AbortController();
   #active = false;
   #diagnose: (code: DiagnosticCode) => void;

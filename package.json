@@ -45,15 +45,30 @@
           "default": false,
           "description": "Show Busy Octopus notifications in VS Code."
         },
-        "busyOctopus.disableDetails": {
+        "busyOctopus.detail.enable": {
           "type": "boolean",
-          "default": false,
-          "description": "Hide notification details."
+          "default": true,
+          "description": "Include notification details."
         },
-        "busyOctopus.disableFocusSuppression": {
+        "busyOctopus.focusSuppression.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Suppress notifications while the VS Code window has focus."
+        },
+        "busyOctopus.windows.notification.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show native Windows notifications."
+        },
+        "busyOctopus.windows.notification.sound.enable": {
           "type": "boolean",
           "default": false,
-          "description": "Show notifications even while the VS Code window has focus."
+          "description": "Play the default sound for native Windows notifications."
+        },
+        "busyOctopus.windows.taskbar.flash.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Flash the workspace taskbar button on Windows."
         }
       }
     }
