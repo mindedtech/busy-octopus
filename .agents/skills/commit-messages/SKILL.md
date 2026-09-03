@@ -125,13 +125,17 @@ attribution unless the user explicitly requests them.
 
 For every nontrivial commit, begin the body with exactly two prose paragraphs:
 
-1. Explain the problem or limitation in the present tense.
-2. Explain the solution in the imperative mood.
+1. State the functional goal or context in the present tense. This may describe
+   the desired user outcome, motivation, relevant current behavior, or a real
+   problem.
+2. Describe the change in the imperative mood.
 
 Do not label these paragraphs with headings such as `Problem`, `Motivation`, or
-`Solution`. Keep them focused on intent and behavior. Do not narrate the diff,
-list every file, or describe implementation mechanics that are obvious from
-the code.
+`Solution`. Do not force the first paragraph to claim a defect or missing
+capability. Use problem or limitation language only when it is central to the
+change. Keep both paragraphs focused on intent and behavior. Do not narrate the
+diff, list every file, or describe implementation mechanics that are obvious
+from the code.
 
 After the two paragraphs, add scope sections only when they materially clarify
 a change spanning several areas. Use lower-case headings ending in a colon.
@@ -154,8 +158,9 @@ Use the same Conventional Commit format for the pull request title. Describe
 the whole branch rather than repeating individual commit messages.
 
 Begin the description with the same two unlabelled paragraphs used for commit
-bodies: the current problem, then the imperative solution. Add affected-scope
-sections only when they help a reviewer understand a multi-area change.
+bodies: the functional goal or context, then the change in the imperative
+mood. Add affected-scope sections only when they help a reviewer understand a
+multi-area change.
 
 Do not add generic sections such as `Summary`, `Motivation`, `Developer Impact`,
 `Validation`, or `Testing`. Do not include task checklists or performative claims
@@ -183,8 +188,9 @@ verify all of the following:
 - The title follows Conventional Commits and is under 72 characters.
 - The title is imperative, lower case, specific, and has no terminal period.
 - The type and optional scope describe the purpose accurately.
-- A nontrivial body starts with an unlabelled problem paragraph in the present
-  tense followed by an unlabelled solution paragraph in the imperative mood.
+- A nontrivial body starts with an unlabelled functional goal or context
+  paragraph in the present tense followed by an unlabelled change paragraph in
+  the imperative mood.
 - Optional scope sections are useful, high level, and consistently formatted.
 - The message omits diff narration, generated-artifact noise, generic sections,
   checklists, issue or pull request numbers, and AI attribution.
