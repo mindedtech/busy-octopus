@@ -4,6 +4,7 @@
 
 import { describe, expect, it, vi } from "vitest";
 import { createNotificationRequest } from "../../../protocol/notification.js";
+import type { NotificationDeliveryTarget } from "../adapter.js";
 import type { NotificationDeliveryConfig } from "../config.js";
 import { EditorNotificationAdapter } from "./editor.js";
 
@@ -17,6 +18,12 @@ const notification = createNotificationRequest({
     instanceId: "0".repeat(64),
   },
 });
+
+const target = {
+  authority: "",
+  path: "/synthetic-workspace",
+  scheme: "file",
+} satisfies NotificationDeliveryTarget;
 
 const config = {
   disableDetails: false,
@@ -59,6 +66,7 @@ describe("EditorNotificationAdapter", () => {
       config,
       notification,
       signal: new AbortController().signal,
+      target,
     });
 
     expect(showInformationMessage).toHaveBeenCalledWith(
@@ -74,6 +82,7 @@ describe("EditorNotificationAdapter", () => {
       config,
       notification: { ...notification, body: null },
       signal: new AbortController().signal,
+      target,
     });
 
     expect(showInformationMessage).toHaveBeenCalledWith("Agent finished");
@@ -92,6 +101,7 @@ describe("EditorNotificationAdapter", () => {
       config,
       notification,
       signal: abortController.signal,
+      target,
     });
 
     expect(showInformationMessage).not.toHaveBeenCalled();
@@ -111,6 +121,7 @@ describe("EditorNotificationAdapter", () => {
         title: "Busy Octopus",
       },
       signal: new AbortController().signal,
+      target,
     });
 
     expect(showInformationMessage).toHaveBeenCalledWith(

@@ -4,6 +4,10 @@
 
 import { describe, expect, it, vi } from "vitest";
 import { createNotificationRequest } from "../../protocol/notification.js";
+import type {
+  NotificationDeliveryAdapter,
+  NotificationDeliveryTarget,
+} from "./adapter.js";
 import type { NotificationDeliveryConfig } from "./config.js";
 import { NotificationDeliveryDispatcher } from "./dispatcher.js";
 
@@ -17,6 +21,12 @@ const request = createNotificationRequest({
     instanceId: "0".repeat(64),
   },
 });
+
+const target = {
+  authority: "",
+  path: "/synthetic-workspace",
+  scheme: "file",
+} satisfies NotificationDeliveryTarget;
 
 const config = {
   disableDetails: false,
@@ -36,8 +46,9 @@ describe("NotificationDeliveryDispatcher", () => {
         {
           allow: () => true,
           deliver: vi.fn().mockRejectedValue(new Error("synthetic failure")),
+          dispose: vi.fn(),
         },
-        { allow: () => true, deliver },
+        { allow: () => true, deliver, dispose: vi.fn() },
       ],
       diagnose,
       readConfig,
@@ -45,14 +56,15 @@ describe("NotificationDeliveryDispatcher", () => {
     });
     const signal = new AbortController().signal;
 
-    await dispatcher.deliver(request, signal);
+    await dispatcher.deliver({ notification: request, signal, target });
 
     expect(readConfig).toHaveBeenCalledOnce();
     expect(deliver).toHaveBeenCalledWith({
       config,
       notification: request,
       signal,
-    });
+      target,
+    } satisfies Parameters<NotificationDeliveryAdapter["deliver"]>[0]);
     expect(diagnose).toHaveBeenCalledWith("delivery-adapter-error");
   });
 
@@ -61,14 +73,22 @@ describe("NotificationDeliveryDispatcher", () => {
     const readConfig = vi.fn(() => config);
     const dispatcher = new NotificationDeliveryDispatcher({
       adapterList: [
-        { allow: () => true, deliver: vi.fn().mockResolvedValue(undefined) },
+        {
+          allow: () => true,
+          deliver: vi.fn().mockResolvedValue(undefined),
+          dispose: vi.fn(),
+        },
       ],
       diagnose,
       readConfig,
       readFocus: () => false,
     });
 
-    await dispatcher.deliver(request, new AbortController().signal);
+    await dispatcher.deliver({
+      notification: request,
+      signal: new AbortController().signal,
+      target,
+    });
 
     expect(diagnose).not.toHaveBeenCalled();
     expect(readConfig).toHaveBeenCalledOnce();
@@ -78,13 +98,17 @@ describe("NotificationDeliveryDispatcher", () => {
     const allow = vi.fn(() => true);
     const deliver = vi.fn().mockResolvedValue(undefined);
     const dispatcher = new NotificationDeliveryDispatcher({
-      adapterList: [{ allow, deliver }],
+      adapterList: [{ allow, deliver, dispose: vi.fn() }],
       diagnose: vi.fn(),
       readConfig: () => config,
       readFocus: () => true,
     });
 
-    await dispatcher.deliver(request, new AbortController().signal);
+    await dispatcher.deliver({
+      notification: request,
+      signal: new AbortController().signal,
+      target,
+    });
 
     expect(allow).not.toHaveBeenCalled();
     expect(deliver).not.toHaveBeenCalled();
@@ -93,59 +117,62 @@ describe("NotificationDeliveryDispatcher", () => {
   it("allows explicit focus suppression opt-out", async () => {
     const deliver = vi.fn().mockResolvedValue(undefined);
     const dispatcher = new NotificationDeliveryDispatcher({
-      adapterList: [{ allow: () => true, deliver }],
+      adapterList: [{ allow: () => true, deliver, dispose: vi.fn() }],
       diagnose: vi.fn(),
       readConfig: () => ({ ...config, disableFocusSuppression: true }),
       readFocus: () => true,
     });
     const signal = new AbortController().signal;
 
-    await dispatcher.deliver(request, signal);
+    await dispatcher.deliver({ notification: request, signal, target });
 
     expect(deliver).toHaveBeenCalledWith({
       config: { ...config, disableFocusSuppression: true },
       notification: request,
       signal,
-    });
+      target,
+    } satisfies Parameters<NotificationDeliveryAdapter["deliver"]>[0]);
   });
 
   it("removes details before adapter delivery", async () => {
     const deliver = vi.fn().mockResolvedValue(undefined);
     const dispatcher = new NotificationDeliveryDispatcher({
-      adapterList: [{ allow: () => true, deliver }],
+      adapterList: [{ allow: () => true, deliver, dispose: vi.fn() }],
       diagnose: vi.fn(),
       readConfig: () => ({ ...config, disableDetails: true }),
       readFocus: () => false,
     });
     const signal = new AbortController().signal;
 
-    await dispatcher.deliver(request, signal);
+    await dispatcher.deliver({ notification: request, signal, target });
 
     expect(deliver).toHaveBeenCalledWith({
       config: { ...config, disableDetails: true },
       notification: { ...request, body: null },
       signal,
-    });
+      target,
+    } satisfies Parameters<NotificationDeliveryAdapter["deliver"]>[0]);
   });
 
   it("sanitizes content before adapter delivery", async () => {
     const deliver = vi.fn().mockResolvedValue(undefined);
     const dispatcher = new NotificationDeliveryDispatcher({
-      adapterList: [{ allow: () => true, deliver }],
+      adapterList: [{ allow: () => true, deliver, dispose: vi.fn() }],
       diagnose: vi.fn(),
       readConfig: () => config,
       readFocus: () => false,
     });
     const signal = new AbortController().signal;
 
-    await dispatcher.deliver(
-      {
+    await dispatcher.deliver({
+      notification: {
         ...request,
         body: "Review\n\u202ethe result.",
         title: "Agent\tfinished",
       },
       signal,
-    );
+      target,
+    });
 
     expect(deliver).toHaveBeenCalledWith({
       config,
@@ -155,21 +182,22 @@ describe("NotificationDeliveryDispatcher", () => {
         title: "Agent finished",
       },
       signal,
-    });
+      target,
+    } satisfies Parameters<NotificationDeliveryAdapter["deliver"]>[0]);
   });
 
   it("does not deliver through an adapter that rejects config", async () => {
     const allow = vi.fn(() => false);
     const deliver = vi.fn().mockResolvedValue(undefined);
     const dispatcher = new NotificationDeliveryDispatcher({
-      adapterList: [{ allow, deliver }],
+      adapterList: [{ allow, deliver, dispose: vi.fn() }],
       diagnose: vi.fn(),
       readConfig: () => config,
       readFocus: () => false,
     });
     const signal = new AbortController().signal;
 
-    await dispatcher.deliver(request, signal);
+    await dispatcher.deliver({ notification: request, signal, target });
 
     expect(allow).toHaveBeenCalledWith(config);
     expect(deliver).not.toHaveBeenCalled();
@@ -179,7 +207,11 @@ describe("NotificationDeliveryDispatcher", () => {
     const readConfig = vi.fn(() => config);
     const dispatcher = new NotificationDeliveryDispatcher({
       adapterList: [
-        { allow: () => true, deliver: vi.fn().mockResolvedValue(undefined) },
+        {
+          allow: () => true,
+          deliver: vi.fn().mockResolvedValue(undefined),
+          dispose: vi.fn(),
+        },
       ],
       diagnose: vi.fn(),
       readConfig,
@@ -187,8 +219,8 @@ describe("NotificationDeliveryDispatcher", () => {
     });
     const signal = new AbortController().signal;
 
-    await dispatcher.deliver(request, signal);
-    await dispatcher.deliver(request, signal);
+    await dispatcher.deliver({ notification: request, signal, target });
+    await dispatcher.deliver({ notification: request, signal, target });
 
     expect(readConfig).toHaveBeenCalledTimes(2);
   });
@@ -198,7 +230,7 @@ describe("NotificationDeliveryDispatcher", () => {
     const deliver = vi.fn().mockResolvedValue(undefined);
     const diagnose = vi.fn();
     const dispatcher = new NotificationDeliveryDispatcher({
-      adapterList: [{ allow: () => true, deliver }],
+      adapterList: [{ allow: () => true, deliver, dispose: vi.fn() }],
       diagnose,
       readConfig: () => {
         throw failure;
@@ -207,11 +239,35 @@ describe("NotificationDeliveryDispatcher", () => {
     });
 
     await expect(
-      dispatcher.deliver(request, new AbortController().signal),
+      dispatcher.deliver({
+        notification: request,
+        signal: new AbortController().signal,
+        target,
+      }),
     ).rejects.toBe(failure);
 
     expect(deliver).not.toHaveBeenCalled();
     expect(diagnose).toHaveBeenCalledWith("delivery-configuration-error");
+  });
+
+  it("disposes every adapter", () => {
+    const disposeList = [vi.fn(), vi.fn()];
+    const dispatcher = new NotificationDeliveryDispatcher({
+      adapterList: disposeList.map((dispose) => ({
+        allow: () => true,
+        deliver: vi.fn().mockResolvedValue(undefined),
+        dispose,
+      })),
+      diagnose: vi.fn(),
+      readConfig: () => config,
+      readFocus: () => false,
+    });
+
+    dispatcher.dispose();
+
+    for (const dispose of disposeList) {
+      expect(dispose).toHaveBeenCalledOnce();
+    }
   });
 
   it("propagates adapter policy failures", async () => {
@@ -225,8 +281,9 @@ describe("NotificationDeliveryDispatcher", () => {
             throw failure;
           },
           deliver: vi.fn().mockResolvedValue(undefined),
+          dispose: vi.fn(),
         },
-        { allow: () => true, deliver },
+        { allow: () => true, deliver, dispose: vi.fn() },
       ],
       diagnose,
       readConfig: () => config,
@@ -234,7 +291,11 @@ describe("NotificationDeliveryDispatcher", () => {
     });
 
     await expect(
-      dispatcher.deliver(request, new AbortController().signal),
+      dispatcher.deliver({
+        notification: request,
+        signal: new AbortController().signal,
+        target,
+      }),
     ).rejects.toBe(failure);
 
     expect(deliver).not.toHaveBeenCalled();

@@ -142,7 +142,12 @@ export const activate = (context: ExtensionContext): void => {
       new WorkspaceQueueConsumer({
         diagnose: diagnosticReporter.report,
         intervalMilliseconds: 1_000,
-        onRequest: dispatcher.deliver,
+        onRequest: (notification, signal) =>
+          dispatcher.deliver({
+            notification,
+            signal,
+            target: workspace.workspaceFile ?? folder.uri,
+          }),
         queue: createWorkspaceQueue({ fileSystem, folder }),
         schedule: (callback, intervalMilliseconds) => {
           const timer = setInterval(callback, intervalMilliseconds);
@@ -177,17 +182,19 @@ export const activate = (context: ExtensionContext): void => {
       const { context: workspaceContext } =
         await resolveExtensionWorkspace(folder);
 
-      await dispatcher.deliver(
-        createNotificationRequest({
+      await dispatcher.deliver({
+        notification: createNotificationRequest({
           body: "Notification delivery is working.",
           source: null,
           title: "Busy Octopus",
           workspace: workspaceContext,
         }),
-        new AbortController().signal,
-      );
+        signal: new AbortController().signal,
+        target: workspace.workspaceFile ?? folder.uri,
+      });
     }),
     consumer,
+    dispatcher,
     diagnosticReporter,
   );
 };

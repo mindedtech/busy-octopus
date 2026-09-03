@@ -2,14 +2,16 @@
  * @file Notification delivery through the VS Code message interface.
  */
 
-import type { window } from "vscode";
+import type { Disposable, window } from "vscode";
 import type { NotificationRequest } from "../../../protocol/notification.js";
 import type { NotificationDeliveryAdapter } from "../adapter.js";
 
 /**
  * VS Code information-message notification adapter.
  */
-export class EditorNotificationAdapter implements NotificationDeliveryAdapter {
+export class EditorNotificationAdapter
+  implements NotificationDeliveryAdapter, Disposable
+{
   #window: Pick<typeof window, "showInformationMessage">;
 
   constructor(editorWindow: Pick<typeof window, "showInformationMessage">) {
@@ -34,6 +36,11 @@ export class EditorNotificationAdapter implements NotificationDeliveryAdapter {
 
     void this.#window.showInformationMessage(this.#formatMessage(notification));
   };
+
+  /**
+   * Dispose this stateless adapter.
+   */
+  dispose = (): void => undefined;
 
   #formatMessage = ({ body, title }: NotificationRequest): string => {
     if (body === null) {

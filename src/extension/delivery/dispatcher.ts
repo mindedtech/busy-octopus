@@ -2,15 +2,19 @@
  * @file Notification delivery through independent extension adapters.
  */
 
+import type { Disposable } from "vscode";
 import type { NotificationRequest } from "../../protocol/notification.js";
 import type { DiagnosticCode } from "../diagnostic.js";
-import type { NotificationDeliveryAdapter } from "./adapter.js";
+import type {
+  NotificationDeliveryAdapter,
+  NotificationDeliveryTarget,
+} from "./adapter.js";
 import type { NotificationDeliveryConfig } from "./config.js";
 
 /**
  * Failure isolation across independent notification delivery adapters.
  */
-export class NotificationDeliveryDispatcher {
+export class NotificationDeliveryDispatcher implements Disposable {
   #adapterList: NotificationDeliveryAdapter[];
   #diagnose: (code: DiagnosticCode) => void;
   #readConfig: () => NotificationDeliveryConfig;
@@ -51,10 +55,15 @@ export class NotificationDeliveryDispatcher {
   /**
    * Deliver one notification through every eligible adapter.
    */
-  deliver = async (
-    request: NotificationRequest,
-    signal: AbortSignal,
-  ): Promise<void> => {
+  deliver = async ({
+    notification: request,
+    signal,
+    target,
+  }: {
+    notification: NotificationRequest;
+    signal: AbortSignal;
+    target: NotificationDeliveryTarget;
+  }): Promise<void> => {
     const config = this.#readDeliveryConfig();
 
     if (this.#readFocus() && !config.disableFocusSuppression) {
@@ -76,7 +85,17 @@ export class NotificationDeliveryDispatcher {
         config,
         notification,
         signal,
+        target,
       });
+    }
+  };
+
+  /**
+   * Dispose every delivery adapter.
+   */
+  dispose = (): void => {
+    for (const adapter of this.#adapterList) {
+      adapter.dispose();
     }
   };
 
@@ -115,14 +134,16 @@ export class NotificationDeliveryDispatcher {
     config,
     notification,
     signal,
+    target,
   }: {
     adapter: NotificationDeliveryAdapter;
     config: NotificationDeliveryConfig;
     notification: NotificationRequest;
     signal: AbortSignal;
+    target: NotificationDeliveryTarget;
   }): Promise<void> => {
     try {
-      await adapter.deliver({ config, notification, signal });
+      await adapter.deliver({ config, notification, signal, target });
     } catch {
       this.#diagnose("delivery-adapter-error");
     }

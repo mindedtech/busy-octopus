@@ -18,9 +18,9 @@ type WorkspaceFolderChange<Folder extends WorkspaceFolderReference> = {
 /**
  * Start queue consumers only after trust and track workspace-folder changes.
  */
-export class ExtensionWorkspaceConsumer<
-  Folder extends WorkspaceFolderReference,
-> {
+export class ExtensionWorkspaceConsumer<Folder extends WorkspaceFolderReference>
+  implements Disposable
+{
   #consumerMap = new Map<string, Disposable>();
   #createConsumer: (folder: Folder) => Disposable;
   #folderListener: Disposable | null = null;
