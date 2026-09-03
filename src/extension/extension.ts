@@ -20,6 +20,7 @@ import { identifyWorkspace } from "../workspace/identity.js";
 import { resolveWorkspaceQueue } from "../workspace/queue.js";
 import { EditorNotificationAdapter } from "./delivery/adapter/editor.js";
 import { WindowsNotificationAdapter } from "./delivery/adapter/windows/notification.js";
+import { WindowsTaskbarAdapter } from "./delivery/adapter/windows/taskbar.js";
 import type { NotificationDeliveryAdapter } from "./delivery/adapter.js";
 import {
   NotificationDeliveryConfig,
@@ -30,7 +31,13 @@ import { ExtensionDiagnosticReporter } from "./diagnostic.js";
 import { WorkspaceQueueConsumer } from "./queue/consumer.js";
 import { WorkspaceQueueFileSystem } from "./queue/file-system.js";
 import { locateRemoteWorkspaceQueue } from "./queue/location.js";
-import { showWindowsNotification } from "./windows/bridge.js";
+import {
+  captureEditorWindow,
+  EditorProcessId,
+  showWindowsNotification,
+  startEditorWindowFlash,
+  stopEditorWindowFlash,
+} from "./windows/bridge.js";
 import { ExtensionWorkspaceConsumer } from "./workspace-consumer.js";
 
 const resolveExtensionWorkspace = async ({
@@ -152,6 +159,9 @@ export const activate = (context: ExtensionContext): void => {
   ];
 
   if (process.platform === "win32") {
+    const editorProcessId = EditorProcessId.nullable()
+      .catch(null)
+      .parse(process.env.VSCODE_PID);
     const scriptPath = context.asAbsolutePath("native/windows-notify.ps1");
 
     adapterList.push(
@@ -162,6 +172,38 @@ export const activate = (context: ExtensionContext): void => {
         uriScheme: env.uriScheme,
       }),
     );
+
+    if (editorProcessId === null) {
+      diagnosticReporter.report("taskbar-process-error");
+    } else {
+      adapterList.push(
+        new WindowsTaskbarAdapter({
+          bridge: {
+            captureWindow: () =>
+              captureEditorWindow({ editorProcessId, scriptPath }),
+            startFlash: ({ signal, windowHandle }) =>
+              startEditorWindowFlash({
+                editorProcessId,
+                scriptPath,
+                signal,
+                windowHandle,
+              }),
+            stopFlash: ({ windowHandle }) =>
+              stopEditorWindowFlash({
+                editorProcessId,
+                scriptPath,
+                windowHandle,
+              }),
+          },
+          diagnose: diagnosticReporter.report,
+          onFocusChange: (onChange) =>
+            window.onDidChangeWindowState(({ focused: focus }) =>
+              onChange(focus),
+            ),
+          readFocus: () => window.state.focused,
+        }),
+      );
+    }
   }
 
   const dispatcher = new NotificationDeliveryDispatcher({

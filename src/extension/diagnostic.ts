@@ -2,7 +2,7 @@
  * @file Bounded extension failure reports without notification content.
  */
 
-import type { LogOutputChannel, window } from "vscode";
+import type { Disposable, LogOutputChannel, window } from "vscode";
 
 /**
  * Content-free extension failure category.
@@ -12,7 +12,8 @@ export type DiagnosticCode =
   | "delivery-adapter-error"
   | "delivery-configuration-error"
   | "queue-access-error"
-  | "request-consumer-error";
+  | "request-consumer-error"
+  | "taskbar-process-error";
 
 /**
  * Output-channel operations required by extension diagnostics.
@@ -22,7 +23,7 @@ export type DiagnosticOutput = Pick<LogOutputChannel, "dispose" | "warn">;
 /**
  * One report per known failure and extension session.
  */
-export class ExtensionDiagnosticReporter {
+export class ExtensionDiagnosticReporter implements Disposable {
   #codeSet = new Set<DiagnosticCode>();
   #output: DiagnosticOutput;
   #window: Pick<typeof window, "showErrorMessage">;
@@ -64,6 +65,7 @@ export class ExtensionDiagnosticReporter {
       case "delivery-adapter-error":
       case "queue-access-error":
       case "request-consumer-error":
+      case "taskbar-process-error":
         return;
     }
   };
