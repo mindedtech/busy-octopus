@@ -294,7 +294,7 @@ function Start-EditorTaskbarFlash {
     $flashInfo = [BusyOctopusWindow+FLASHWINFO]::new()
     $flashInfo.cbSize = [uint32][System.Runtime.InteropServices.Marshal]::SizeOf($flashInfo)
     $flashInfo.hwnd = $windowHandle
-    $flashInfo.dwFlags = 0x00000002 -bor 0x0000000C
+    $flashInfo.dwFlags = 0x00000002 -bor 0x00000004
     $flashInfo.uCount = [uint32]::MaxValue
     $flashInfo.dwTimeout = 0
     [void][BusyOctopusWindow]::FlashWindowEx([ref]$flashInfo)
