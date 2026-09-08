@@ -3,7 +3,10 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
-import { createNotificationRequest } from "../../protocol/notification.js";
+import {
+  createNotificationRequest,
+  type NotificationRequest,
+} from "../../protocol/notification.js";
 import type {
   NotificationDeliveryAdapter,
   NotificationDeliveryTarget,
@@ -41,6 +44,81 @@ const config = {
 } satisfies NotificationDeliveryConfig;
 
 describe("NotificationDeliveryDispatcher", () => {
+  it.each([
+    [
+      { branch: "feature/example", label: "synthetic-workspace" },
+      "Codex · synthetic-workspace · feature/example",
+    ],
+    [
+      { branch: null, label: "synthetic-workspace" },
+      "Codex · synthetic-workspace",
+    ],
+    [{ branch: "feature/example", label: null }, "Codex · feature/example"],
+    [{ branch: null, label: null }, "Codex"],
+  ] satisfies [NotificationRequest["workspace"]["display"], string][])(
+    "formats an agent notification title without repeating its source: %s",
+    async (display, title) => {
+      const notification = {
+        ...request,
+        body: "Review the result.",
+        source: { kind: "agent", name: "Codex" },
+        title: "Codex",
+        workspace: { ...request.workspace, display },
+      } satisfies NotificationRequest;
+      const deliver = vi.fn().mockResolvedValue(undefined);
+      const dispatcher = new NotificationDeliveryDispatcher({
+        adapterList: [{ allow: () => true, deliver, dispose: vi.fn() }],
+        diagnose: vi.fn(),
+        readConfig: () => config,
+        readFocus: () => false,
+      });
+      const signal = new AbortController().signal;
+
+      await dispatcher.deliver({ notification, signal, target });
+
+      expect(deliver).toHaveBeenCalledWith({
+        config,
+        notification: {
+          ...notification,
+          body: "Review the result.",
+          title,
+        },
+        signal,
+        target,
+      } satisfies Parameters<NotificationDeliveryAdapter["deliver"]>[0]);
+    },
+  );
+
+  it("keeps an agent event summary when notification details are disabled", async () => {
+    const notification = {
+      ...request,
+      source: { kind: "agent", name: "Codex" },
+      title: "Input required.",
+    } satisfies NotificationRequest;
+    const deliveryConfig = { ...config, detail: { enable: false } };
+    const deliver = vi.fn().mockResolvedValue(undefined);
+    const dispatcher = new NotificationDeliveryDispatcher({
+      adapterList: [{ allow: () => true, deliver, dispose: vi.fn() }],
+      diagnose: vi.fn(),
+      readConfig: () => deliveryConfig,
+      readFocus: () => false,
+    });
+    const signal = new AbortController().signal;
+
+    await dispatcher.deliver({ notification, signal, target });
+
+    expect(deliver).toHaveBeenCalledWith({
+      config: deliveryConfig,
+      notification: {
+        ...notification,
+        body: "Input required.",
+        title: "Codex · synthetic-workspace",
+      },
+      signal,
+      target,
+    } satisfies Parameters<NotificationDeliveryAdapter["deliver"]>[0]);
+  });
+
   it("continues after an adapter fails", async () => {
     const diagnose = vi.fn();
     const readConfig = vi.fn(() => config);
