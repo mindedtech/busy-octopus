@@ -12,6 +12,7 @@ describe("program", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Usage: busy-octopus [options] [command]");
+    expect(result.stdout).toContain("agent");
     expect(result.stdout).toContain("notify [options]");
     expect(result.stdout).toContain("doctor [options]");
   });

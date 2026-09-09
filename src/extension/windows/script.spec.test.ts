@@ -21,7 +21,7 @@ it("uses safe native APIs and separate operations", async () => {
   expect(script).toContain(
     /* xml */ `<toast activationType="protocol" launch="$xmlActivationUri">`,
   );
-  expect(script).toContain(`$flashInfo.dwFlags = 0x00000002 -bor 0x0000000C`);
+  expect(script).toContain(`$flashInfo.dwFlags = 0x00000002 -bor 0x00000004`);
   expect(script).toContain("GetForegroundWindow");
   expect(script).toContain("GetWindowThreadProcessId");
   expect(script).toContain("Get-CimInstance -ClassName Win32_Process");

@@ -2,7 +2,7 @@
  * @file Verify the distributable package from clean consumer projects.
  */
 
-import { execFile } from "node:child_process";
+import { execFile, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import {
   mkdir,
@@ -18,6 +18,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import { assert, expect, it } from "vitest";
 import { z } from "zod";
+import type { ClaudeCodeHook } from "../src/integration/agent/claude-code/adapter.js";
+import type { CodexHook } from "../src/integration/agent/codex/adapter.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -147,6 +149,36 @@ const runPnpm = async ({
     ...(environment === undefined ? {} : { environment }),
   });
 
+const runPnpmInput = ({
+  argumentList,
+  directory,
+  environment,
+  input,
+}: {
+  argumentList: string[];
+  directory: string;
+  environment: NodeJS.ProcessEnv;
+  input: string;
+}): { stderr: string; stdout: string } => {
+  const result = spawnSync(
+    pnpmProcess.command,
+    [...pnpmProcess.argumentList, ...argumentList],
+    {
+      cwd: directory,
+      encoding: "utf8",
+      env: environment,
+      input,
+      maxBuffer: MAXIMUM_PROCESS_OUTPUT_BYTE_COUNT,
+      windowsHide: true,
+    },
+  );
+
+  expect(result.error).toBeUndefined();
+  expect(result.status).toBe(0);
+
+  return { stderr: result.stderr, stdout: result.stdout };
+};
+
 const parseQueueRequest = async (path: string) => {
   try {
     const result = QueueRequest.safeParse(
@@ -176,8 +208,7 @@ const findQueueRequest = async ({
   notificationId: string;
   queueRoot: string;
 }) => {
-  const workspaceEntryList = await readQueueRoot(queueRoot);
-  for (const workspaceEntry of workspaceEntryList) {
+  for (const workspaceEntry of await readQueueRoot(queueRoot)) {
     if (!workspaceEntry.isDirectory()) {
       continue;
     }
@@ -199,7 +230,7 @@ const findQueueRequest = async ({
   return null;
 };
 
-it("verifies the packed library and CLI", async () => {
+it("verifies the packed library and CLI", { timeout: 30_000 }, async () => {
   const fixtureDirectory = await mkdtemp(
     join(tmpdir(), "busy-octopus-package-"),
   );
@@ -215,16 +246,17 @@ it("verifies the packed library and CLI", async () => {
     await mkdir(workspaceDirectory);
     await runPnpm({ argumentList: ["build"] });
 
-    const packResult = PackResult.parse(
-      JSON.parse(
-        await runPnpm({
-          argumentList: ["pack", "--out", tarballPath, "--json"],
-        }),
-      ),
-    );
-    expect(packResult.files.map(({ path }) => path).toSorted()).toEqual(
-      allowFileList.toSorted(),
-    );
+    expect(
+      PackResult.parse(
+        JSON.parse(
+          await runPnpm({
+            argumentList: ["pack", "--out", tarballPath, "--json"],
+          }),
+        ),
+      )
+        .files.map(({ path }) => path)
+        .toSorted(),
+    ).toEqual(allowFileList.toSorted());
 
     await writeFile(
       join(fixtureDirectory, "package.json"),
@@ -300,6 +332,117 @@ it("verifies the packed library and CLI", async () => {
       title: "Synthetic CLI notification",
       body: "Review the synthetic CLI result.",
       source: { kind: "test", name: "Synthetic CLI runner" },
+    });
+
+    await expect(
+      runPnpm({
+        argumentList: [
+          "exec",
+          "busy-octopus",
+          "agent",
+          "setup",
+          "codex",
+          "--directory",
+          workspaceDirectory,
+          "--yes",
+        ],
+        directory: fixtureDirectory,
+        environment: runtimeEnvironment,
+      }),
+    ).resolves.toBe("configured\n");
+    expect(
+      JSON.parse(
+        await readFile(
+          join(workspaceDirectory, ".codex", "hooks.json"),
+          "utf8",
+        ),
+      ),
+    ).toMatchObject({
+      hooks: {
+        Stop: [
+          {
+            hooks: [
+              {
+                command: "busy-octopus agent hook codex",
+                timeout: 2,
+                type: "command",
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    expect(
+      runPnpmInput({
+        argumentList: ["exec", "busy-octopus", "agent", "hook", "codex"],
+        directory: fixtureDirectory,
+        environment: runtimeEnvironment,
+        input: JSON.stringify({
+          session_id: "package-session",
+          transcript_path: null,
+          cwd: workspaceDirectory,
+          hook_event_name: "Stop",
+          model: "gpt-synthetic",
+          permission_mode: "default",
+          turn_id: "package-turn",
+          stop_hook_active: false,
+          last_assistant_message: "Synthetic Codex result.",
+        } satisfies CodexHook),
+      }),
+    ).toEqual({ stderr: "", stdout: "{}\n" });
+    expect(
+      await findQueueRequest({
+        notificationId: "codex-turn-255c7515a88c50aa9915122472e60b11",
+        queueRoot,
+      }),
+    ).toMatchObject({
+      request: {
+        body: "Synthetic Codex result.",
+        source: { kind: "agent", name: "Codex" },
+        title: "Codex",
+      },
+    });
+
+    expect(
+      runPnpmInput({
+        argumentList: ["exec", "busy-octopus", "agent", "hook", "claude-code"],
+        directory: fixtureDirectory,
+        environment: runtimeEnvironment,
+        input: JSON.stringify({
+          session_id: "package-session",
+          prompt_id: "123e4567-e89b-42d3-a456-426614174000",
+          transcript_path: "/synthetic/transcript.jsonl",
+          cwd: workspaceDirectory,
+          hook_event_name: "Stop",
+          stop_hook_active: false,
+          last_assistant_message: "Synthetic Claude Code result.",
+        } satisfies ClaudeCodeHook),
+      }),
+    ).toEqual({ stderr: "", stdout: "" });
+    expect(
+      await findQueueRequest({
+        notificationId: "claude-turn-64a66c74259f1ae0046dab1ec55d0130",
+        queueRoot,
+      }),
+    ).toMatchObject({
+      request: {
+        body: "Synthetic Claude Code result.",
+        source: { kind: "agent", name: "Claude Code" },
+        title: "Claude Code",
+      },
+    });
+
+    expect(
+      runPnpmInput({
+        argumentList: ["exec", "busy-octopus", "agent", "hook", "codex"],
+        directory: fixtureDirectory,
+        environment: runtimeEnvironment,
+        input: "{",
+      }),
+    ).toEqual({
+      stderr: "busy-octopus: unable to process the agent hook.\n",
+      stdout: "{}\n",
     });
 
     const javascriptPath = join(fixtureDirectory, "consumer.mjs");
@@ -485,4 +628,4 @@ void result;
       rm(artifactDirectory, { force: true, recursive: true }),
     ]);
   }
-}, 60_000);
+});

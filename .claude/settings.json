@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "busy-octopus agent hook claude-code",
+            "timeout": 2,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "command": "busy-octopus agent hook claude-code",
+            "timeout": 2,
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -114,14 +114,41 @@ export class NotificationDeliveryDispatcher implements Disposable {
   }: {
     config: NotificationDeliveryConfig;
     notification: NotificationRequest;
-  }): NotificationRequest => ({
-    ...notification,
-    body:
-      !detail.enable || notification.body === null
-        ? null
-        : this.#sanitizeText(notification.body),
-    title: this.#sanitizeText(notification.title),
-  });
+  }): NotificationRequest => {
+    const {
+      body,
+      source,
+      title,
+      workspace: {
+        display: { branch, label },
+      },
+    } = notification;
+    const summary = this.#sanitizeText(title);
+    const notificationDetail =
+      !detail.enable || body === null ? null : this.#sanitizeText(body);
+
+    if (source === null) {
+      return { ...notification, body: notificationDetail, title: summary };
+    }
+
+    const sourceName = this.#sanitizeText(source.name);
+
+    return {
+      ...notification,
+      body:
+        summary === sourceName
+          ? notificationDetail
+          : [summary, notificationDetail]
+              .filter((value) => value !== null)
+              .join(" "),
+      title: [
+        sourceName,
+        ...[label, branch]
+          .filter((value) => value !== null)
+          .map(this.#sanitizeText),
+      ].join(" · "),
+    };
+  };
 
   #sanitizeText = (value: string): string =>
     value

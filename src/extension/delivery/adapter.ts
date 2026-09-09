@@ -45,7 +45,7 @@ export type NotificationDeliveryAdapter = Disposable & {
     config: NotificationDeliveryConfig;
 
     /**
-     * Notification content prepared for delivery.
+     * Notification metadata and display content.
      */
     notification: NotificationRequest;
 

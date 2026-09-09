@@ -3,6 +3,7 @@
  */
 
 import { Command } from "@commander-js/extra-typings";
+import { agentCommand } from "./agent.js";
 import { doctorCommand } from "./doctor.js";
 import { notifyCommand } from "./notify.js";
 
@@ -12,5 +13,6 @@ export const program = new Command()
   .action(() => {
     program.help();
   })
+  .addCommand(agentCommand)
   .addCommand(notifyCommand)
   .addCommand(doctorCommand);

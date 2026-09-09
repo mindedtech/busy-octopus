@@ -2,7 +2,10 @@
  * @file Instrument the command-line interface for behavioral tests.
  */
 
-import type { OutputConfiguration } from "@commander-js/extra-typings";
+import type {
+  CommandUnknownOpts,
+  OutputConfiguration,
+} from "@commander-js/extra-typings";
 import { vi } from "vitest";
 
 export const runTestCli = async (
@@ -32,7 +35,13 @@ export const runTestCli = async (
         stdoutChunkList.push(chunk);
       },
     };
-    for (const command of [program, ...program.commands]) {
+    const commandList: CommandUnknownOpts[] = [program];
+
+    for (const command of commandList) {
+      commandList.push(...command.commands);
+    }
+
+    for (const command of commandList) {
       command.configureOutput(output).exitOverride();
     }
 
