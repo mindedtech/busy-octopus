@@ -14,6 +14,7 @@ export const runTestCli = async (
   vi.resetModules();
   const stdoutChunkList: string[] = [];
   const stderrChunkList: string[] = [];
+  const processExitCode = process.exitCode;
   let exitCode = 0;
   const consoleLog = vi
     .spyOn(console, "log")
@@ -22,6 +23,8 @@ export const runTestCli = async (
     });
 
   try {
+    process.exitCode = 0;
+
     const [{ CommanderError }, { program }] = await Promise.all([
       import("@commander-js/extra-typings"),
       import("./cli.js"),
@@ -47,6 +50,7 @@ export const runTestCli = async (
 
     try {
       await program.parseAsync(argumentList, { from: "user" });
+      exitCode = process.exitCode ?? 0;
     } catch (error: unknown) {
       if (!(error instanceof CommanderError)) {
         throw error;
@@ -60,6 +64,7 @@ export const runTestCli = async (
       stdout: stdoutChunkList.join(""),
     };
   } finally {
+    process.exitCode = processExitCode;
     consoleLog.mockRestore();
   }
 };

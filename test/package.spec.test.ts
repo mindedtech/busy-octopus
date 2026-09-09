@@ -201,6 +201,28 @@ const readQueueRoot = async (queueRoot: string) => {
   }
 };
 
+const readQueuePathList = async (queueRoot: string): Promise<string[]> => {
+  const pathList: string[] = [];
+
+  for (const workspaceEntry of await readQueueRoot(queueRoot)) {
+    if (!workspaceEntry.isDirectory()) {
+      continue;
+    }
+
+    const directory = join(queueRoot, workspaceEntry.name);
+
+    for (const requestEntry of await readdir(directory, {
+      withFileTypes: true,
+    })) {
+      if (requestEntry.isFile() && requestEntry.name.endsWith(".json")) {
+        pathList.push(join(directory, requestEntry.name));
+      }
+    }
+  }
+
+  return pathList;
+};
+
 const findQueueRequest = async ({
   notificationId,
   queueRoot,
@@ -208,23 +230,11 @@ const findQueueRequest = async ({
   notificationId: string;
   queueRoot: string;
 }) => {
-  for (const workspaceEntry of await readQueueRoot(queueRoot)) {
-    if (!workspaceEntry.isDirectory()) {
-      continue;
-    }
-    const directory = join(queueRoot, workspaceEntry.name);
-    for (const requestEntry of await readdir(directory, {
-      withFileTypes: true,
-    })) {
-      if (!requestEntry.isFile() || !requestEntry.name.endsWith(".json")) {
-        continue;
-      }
-      const request = await parseQueueRequest(
-        join(directory, requestEntry.name),
-      );
-      if (request?.notificationId === notificationId) {
-        return { directory, request };
-      }
+  for (const path of await readQueuePathList(queueRoot)) {
+    const request = await parseQueueRequest(path);
+
+    if (request?.notificationId === notificationId) {
+      return { directory: dirname(path), request };
     }
   }
   return null;
@@ -294,6 +304,90 @@ it("verifies the packed library and CLI", { timeout: 30_000 }, async () => {
       }),
     ).resolves.toBe("Workspace resolution: ok\nQueue routing: ok\n");
     expect(await readQueueRoot(queueRoot)).toEqual([]);
+
+    const cliPath = join(
+      fixtureDirectory,
+      "node_modules",
+      "busy-octopus",
+      "dist",
+      "cli",
+      "main.js",
+    );
+    const commandResult = spawnSync(
+      process.execPath,
+      [
+        cliPath,
+        "run",
+        "--tail",
+        "--",
+        process.execPath,
+        "-e",
+        'process.stdout.write("synthetic stdout\\n"); process.stderr.write("synthetic stderr\\n"); process.exit(7)',
+      ],
+      {
+        cwd: fixtureDirectory,
+        encoding: "utf8",
+        maxBuffer: MAXIMUM_PROCESS_OUTPUT_BYTE_COUNT,
+        timeout: 5_000,
+        env: runtimeEnvironment,
+        windowsHide: true,
+      },
+    );
+
+    expect(commandResult.error).toBeUndefined();
+    expect(commandResult.status).toBe(7);
+    expect(commandResult.signal).toBeNull();
+    expect(commandResult.stdout).toBe("synthetic stdout\n");
+    expect(commandResult.stderr).toBe("synthetic stderr\n");
+
+    const commandQueuePathList = await readQueuePathList(queueRoot);
+    expect(commandQueuePathList).toHaveLength(1);
+    const [commandQueuePath] = commandQueuePathList;
+    assert(
+      commandQueuePath !== undefined,
+      "Command request path must be available.",
+    );
+    const commandRequest = await parseQueueRequest(commandQueuePath);
+    assert(
+      commandRequest !== null,
+      "Command result must reach a workspace queue.",
+    );
+    expect(commandRequest).toMatchObject({
+      source: { kind: "command", name: basename(process.execPath) },
+      title: "Failed with exit code 7.",
+    } satisfies Partial<z.infer<typeof QueueRequest>>);
+    expect(commandRequest.body?.split("\n").toSorted()).toEqual([
+      "synthetic stderr",
+      "synthetic stdout",
+    ]);
+    if (process.platform !== "win32") {
+      const signalResult = spawnSync(
+        process.execPath,
+        [
+          cliPath,
+          "run",
+          "--success-only",
+          "--",
+          process.execPath,
+          "-e",
+          'process.kill(process.pid, "SIGTERM")',
+        ],
+        {
+          cwd: fixtureDirectory,
+          encoding: "utf8",
+          maxBuffer: MAXIMUM_PROCESS_OUTPUT_BYTE_COUNT,
+          timeout: 5_000,
+          env: runtimeEnvironment,
+          windowsHide: true,
+        },
+      );
+
+      expect(signalResult.error).toBeUndefined();
+      expect(signalResult.status).toBeNull();
+      expect(signalResult.signal).toBe("SIGTERM");
+      expect(signalResult.stdout).toBe("");
+      expect(signalResult.stderr).toBe("");
+    }
 
     const cliNotificationId = `cli-notification-${randomUUID()}`;
     await expect(
