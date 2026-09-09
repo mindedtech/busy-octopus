@@ -9,6 +9,7 @@ import { boundText } from "./text.js";
 import { WorkspaceContext } from "./workspace.js";
 
 export const MAXIMUM_NOTIFICATION_REQUEST_BYTE_COUNT = 4_096;
+export const MAXIMUM_NOTIFICATION_BODY_CODE_POINT_COUNT = 1_024;
 
 const utf8Encoder = new TextEncoder();
 
@@ -24,7 +25,7 @@ const NotificationTitle = boundText({
 
 const NotificationBody = boundText({
   domain: "Notification body",
-  maximumCodePointCount: 1_024,
+  maximumCodePointCount: MAXIMUM_NOTIFICATION_BODY_CODE_POINT_COUNT,
 })
   .nullable()
   .describe("Notification detail when available.");

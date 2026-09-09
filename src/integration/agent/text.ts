@@ -1,8 +1,7 @@
 /**
  * @file Prepare agent text for the generic notification contract.
  */
-
-const MAXIMUM_NOTIFICATION_BODY_CODE_POINT_COUNT = 1_024;
+import { MAXIMUM_NOTIFICATION_BODY_CODE_POINT_COUNT } from "../../protocol/notification.js";
 
 export const agentNotificationBody = (value: string | null): string | null => {
   if (value === null) {

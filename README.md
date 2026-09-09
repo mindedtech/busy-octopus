@@ -4,40 +4,25 @@
 
 VS Code extension that notifies you when an agent or workspace needs your attention. Supports local workspaces, WSL, and Dev Containers without a cloud service or background daemon.
 
-## Setup
+## Installation
 
-Busy Octopus is not published yet.
-
-### 1. Install the extension
-
-Requires Node.js 22 or later and the pnpm version declared in `package.json`.
+Busy Octopus is not published yet. Install Node.js 22 or later and the pnpm version declared in `package.json`, then run:
 
 ```shell
 pnpm install --frozen-lockfile
 pnpm package:vsix
+pnpm add --global .
 ```
 
 In VS Code:
 
-1. Run **Extensions: Install from VSIX...** from the Command Palette.
+1. Run **Extensions: Install from VSIX...**.
 2. Select `artifacts/busy-octopus-<version>.vsix`.
 3. Open and trust the workspace that should receive notifications.
 
-Notifications are not consumed in Restricted Mode or virtual workspaces.
+Install the CLI in the agent environment. For WSL and Dev Containers, run `pnpm add --global .` inside WSL or the container.
 
-### 2. Install the CLI
-
-Install the CLI in the same environment as the agent. For WSL and Dev Containers, install it inside WSL or the container.
-
-```shell
-pnpm build
-pnpm add --global .
-busy-octopus --help
-```
-
-If pnpm cannot find its global bin directory, run `pnpm setup`, restart the terminal, and install again.
-
-### 3. Configure agent hooks
+## Agent notifications
 
 From the workspace directory:
 
@@ -46,46 +31,32 @@ busy-octopus agent setup codex
 busy-octopus agent setup claude-code
 ```
 
-Run `busy-octopus agent setup --help` for options.
-
-Existing settings and unrelated hooks are preserved. The generated files may be committed as shared project configuration. Each user still needs `busy-octopus` on the agent's `PATH`.
-
-Approve the hooks after setup:
+Approve the new hooks:
 
 | Provider | Approval |
 | --- | --- |
-| Codex | Open `/hooks`, review the Busy Octopus hooks, and trust them. New or changed hooks do not run until trusted. |
-| Claude Code | Accept the workspace trust prompt. Use `/hooks` to confirm that the project hooks are loaded. |
+| Codex | Open `/hooks`, review the Busy Octopus hooks, and trust them. |
+| Claude Code | Accept the workspace trust prompt. |
 
-See the [Codex hook documentation](https://learn.chatgpt.com/docs/hooks) and [Claude Code hook documentation](https://code.claude.com/docs/en/hooks).
+Run `busy-octopus agent setup --help` for attention notifications and other options.
 
-### 4. Verify setup
+## Command notifications
 
-- [ ] Open and trust the target workspace.
+Wrap any command:
+
+```shell
+busy-octopus run -- pnpm test
+```
+
+Run `busy-octopus run --help` for output capture and notification options.
+
+## Verify setup
+
 - [ ] Run `busy-octopus doctor` in the agent environment.
-- [ ] Run **Busy Octopus: Show Test Notification** from the VS Code Command Palette.
-- [ ] Complete an agent turn and check that the correct workspace window receives the notification.
+- [ ] Run **Busy Octopus: Show Test Notification** in VS Code.
+- [ ] Complete an agent turn and check the notification opens the correct workspace window.
 
-The test notification follows the normal delivery settings. While the target workspace window has focus, disable `busyOctopus.focusSuppression.enable` to see it.
-
-## Agent events
-
-Completion events are enabled by default:
-
-| Provider | Event | Details |
-| --- | --- | --- |
-| Codex | `Stop` | Final response, when available. |
-| Claude Code | `Stop` | Final response, when available. |
-| Claude Code | `StopFailure` | Turn stopped with an error. |
-
-`--enable-attention` adds:
-
-| Provider | Event | Message |
-| --- | --- | --- |
-| Codex | `PreToolUse` for `request_user_input` or `request_user_input_async` | Input required. |
-| Claude Code | `PreToolUse` for `AskUserQuestion` | Input required. |
-| Claude Code | `Notification` for `permission_prompt` | Approval required. |
-| Claude Code | Elicitation and agent-input notifications | Input required. |
+The test notification uses the normal settings. Disable `busyOctopus.focusSuppression.enable` when testing with the target workspace window focused.
 
 ## Settings
 
@@ -98,9 +69,45 @@ Completion events are enabled by default:
 | `busyOctopus.windows.notification.sound.enable` | `false` | Play the default Windows notification sound. |
 | `busyOctopus.windows.taskbar.flash.enable` | `true` | Flash the workspace taskbar button on Windows. |
 
-On Windows, clicking a native notification opens the workspace that sent it, including WSL and Dev Container workspaces. Taskbar flashing can target a window after that window has received focus once during the extension session.
+On Windows, clicking a native notification opens its workspace, including WSL and Dev Container workspaces. Taskbar flashing can target a window after it has received focus once during the extension session.
 
 On macOS and Linux, enable `busyOctopus.editor.enable`; native notifications are not available yet.
+
+Notifications are not consumed in Restricted Mode or virtual workspaces.
+
+## Agent integration details
+
+Completion notifications are configured by default:
+
+| Provider | Event | Details |
+| --- | --- | --- |
+| Codex | `Stop` | Final response, when available. |
+| Claude Code | `Stop` | Final response, when available. |
+| Claude Code | `StopFailure` | Turn stopped with an error. |
+
+The `--enable-attention` setup option adds:
+
+| Provider | Event | Message |
+| --- | --- | --- |
+| Codex | `PreToolUse` for `request_user_input` or `request_user_input_async` | Input required. |
+| Claude Code | `PreToolUse` for `AskUserQuestion` | Input required. |
+| Claude Code | `Notification` for `permission_prompt` | Approval required. |
+| Claude Code | Elicitation and agent-input notifications | Input required. |
+
+Setup preserves unrelated settings and hooks. Its project configuration files may be committed, but every user still needs `busy-octopus` on the agent's `PATH`.
+
+Provider documentation: [Codex hooks](https://learn.chatgpt.com/docs/hooks) and [Claude Code hooks](https://code.claude.com/docs/en/hooks).
+
+## Command details
+
+The wrapped command keeps its output and exit status. Notification errors do not change its result.
+
+| Option | Notification content |
+| --- | --- |
+| `-H, --head` | Complete lines from the start, earliest first. |
+| `-T, --tail` | Complete lines from the end, latest first. |
+
+Output is limited to 1,024 characters; a single long line uses its prefix or suffix. The output options are mutually exclusive. Without either option, command output is not included in the notification. Use `-s, --success-only` or `-f, --failure-only` to restrict notifications.
 
 ## Direct notifications
 
@@ -114,7 +121,7 @@ The current directory selects the workspace. Use `--directory <path>` to select 
 
 ## Library
 
-The `busy-octopus notify` command calls the package's exported `notify()` function and exposes the same notification fields as command-line options. JavaScript and TypeScript integrations can call `notify()` directly instead of starting a CLI subprocess.
+The `busy-octopus notify` command uses the package's exported `notify()` function. JavaScript and TypeScript integrations can call the same API instead of starting the CLI as a subprocess.
 
 ```typescript
 import { notify } from "busy-octopus";

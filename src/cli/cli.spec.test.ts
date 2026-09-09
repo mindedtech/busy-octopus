@@ -15,6 +15,7 @@ describe("program", () => {
     expect(result.stdout).toContain("agent");
     expect(result.stdout).toContain("notify [options]");
     expect(result.stdout).toContain("doctor [options]");
+    expect(result.stdout).toContain("run [options] <command> [argument...]");
   });
 
   it("rejects an unknown command", async () => {
