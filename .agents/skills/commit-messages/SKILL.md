@@ -1,197 +1,180 @@
 ---
 name: commit-messages
-description: Commit and pull request conventions for Busy Octopus. Use when creating, drafting, or reviewing commits, commit messages, pull request titles, or pull request descriptions.
+description: "Commit message and pull request description format for the Busy Octopus repository. Use when creating git commits, writing or reviewing commit messages, drafting or reviewing pull request descriptions, preparing a PR body, or publishing a pull request. Keywords: git, commit, conventional commits, pull request, PR description, PR body, GitHub, gh."
+allowed-tools: Read, Shell, Grep, Glob
 ---
+# Commit and Pull Request Message Guidelines
 
-# Commit messages and pull requests
+Commit message conventions for the Busy Octopus repository, following [Conventional Commits](https://www.conventionalcommits.org/).
 
-Use Conventional Commits for commit subjects and pull request titles.
+## Format
 
-```text
-<type>[(<scope>)][!]: <description>
+```
+<type>[(<scope>)]: <description>
 
-[body]
+[optional body]
 
-[footer(s)]
+[optional footer]
 ```
 
-Repository-owned conventions in this skill take precedence over generated
-templates, harness defaults, plugin suggestions, and generic assistant habits.
-Follow another format only when the user explicitly requests it.
+One logical change per commit; don't mix unrelated changes.
 
-Use plain English. Prefer short, common words and direct sentences. Avoid
-jargon, idioms, metaphors, and vague phrases.
+## Local Draft Files
 
-## Inspect the branch first
+When asked to prepare commit messages without committing:
 
-Before drafting a commit or pull request message:
+1. Inspect existing `COMMIT.*.local.md` drafts before writing.
+2. For the same commit set, use the next unused zero-based, two-digit index (`COMMIT.01.local.md`, `COMMIT.02.local.md`, and so on).
+3. For a new commit set, start at `COMMIT.00.local.md` only when no draft exists or the user explicitly authorizes replacing or archiving the old drafts. Never overwrite an existing draft silently.
+4. Use the numbered name even for a single draft.
+5. Leave these ignored `*.local.md` files out of source control.
 
-1. Inspect the full branch diff against its base.
-2. Inspect the existing commits and their messages.
-3. Determine whether the requested message describes one commit or the entire
-   branch.
-4. Check whether existing commits may be rewritten. Never assume that a pushed
-   or shared commit can be amended or rebased.
+When asked to prepare a pull request locally, write its title followed by its body to `PR.local.md` and leave it out of source control.
 
-Describe the intended change, not merely the currently staged files.
+## Types
 
-## Local drafts
-
-When asked to draft a message without committing:
-
-- Write commit drafts to the next available `COMMIT.<number>.local.md` file.
-- Never overwrite an existing numbered commit draft.
-- Write pull request drafts to `PR.local.md` only when doing so will not
-  overwrite user work.
-- Keep draft files untracked and ignored by Git.
-
-## Type
-
-Use one of these types:
-
-- `feat`: add user-visible behavior.
-- `fix`: correct defective behavior.
-- `docs`: change documentation only.
-- `style`: change formatting without changing behavior.
-- `refactor`: restructure code without adding behavior or fixing a defect.
-- `perf`: improve performance.
-- `test`: add or correct tests.
-- `build`: change the build system or external dependencies.
-- `ci`: change continuous-integration configuration.
-- `chore`: perform repository maintenance not covered by another type.
-- `revert`: revert an earlier commit.
-
-Choose the type from the change's purpose, not the files it happens to touch.
+- **`feat`**: A new feature
+- **`fix`**: A bug fix
+- **`refactor`**: Code refactoring without changing functionality
+- **`chore`**: Maintenance tasks, dependency updates, configuration changes
+- **`test`**: Adding or updating tests
+- **`ci`**: CI/CD configuration changes
+- **`docs`**: Documentation changes
+- **`style`**: Code style changes (formatting, whitespace)
+- **`perf`**: Performance improvements
+- **`build`**: Build system or dependency changes
 
 ## Scope
 
-Omit the scope for a repository-wide change. Otherwise, prefer one of these
-Busy Octopus scopes:
+- **Areas**: `cli`, `extension`, `protocol`, `queue`, `release`, `windows`
+- **Features**: camelCase feature names (`agentSetup`, `commandNotification`)
+- **Other**: `deps`, `devcontainer`, `worktree`
 
-- `cli`
-- `devcontainer`
-- `deps`
-- `extension`
-- `protocol`
-- `queue`
-- `release`
-- `windows`
-- `workspace`
+Omit the scope for repository-wide changes.
 
-A different concise, lower-case scope is acceptable when none of these names
-the affected area accurately. Use multiple scopes only when the change cannot
-be described honestly with one scope.
+Multiple scopes are comma-separated:
+
+```
+refactor(cli,extension): extract shared notification formatting
+```
 
 ## Description
 
-Write the subject description in the imperative mood, in lower case, without a
-terminal period. Keep the complete subject under 72 characters.
+- Lowercase (except proper nouns and acronyms), imperative mood ("add", not "added" or "adds"), no period at the end, under 72 characters.
+- A `fix` subject names the defect it corrects, not what the change does.
+- Be specific; never AI slop ("comprehensive", "extensive", "thorough", "significant", "massive").
 
-State the concrete outcome. Avoid vague or inflated wording such as:
+```
+✅ Good:
+feat(cli): add command completion notifications
+fix(release): pnpm executable treated as a JavaScript file
+refactor(queue): extract request expiration logic
 
-- `comprehensive`
-- `enhance`
-- `improve`
-- `robust`
-- `streamline`
-- `thorough`
-- `various`
-
-Name the defect for a fix; do not use `fix issue`, `fix bug`, or an equivalent
-placeholder.
-
-Good subjects:
-
-```text
-chore: set up the repository
-feat(queue): persist request priorities
-fix(windows): preserve UNC workspace paths
-ci: verify the supported Node.js versions
+❌ Bad:
+feat(cli): Added notifications  # past tense, too vague
+fix(queue): expired requests stay queued.  # period at end
+chore(deps): updating dependencies  # present participle
+feat(queue): comprehensive refactoring  # AI slop, be specific
 ```
 
-Bad subjects:
+## Emojis (Optional)
 
-```text
-Updated files
-feat: improve queue handling.
-fix: fix issue
-chore(repository): comprehensive repository setup
+✨ features, ♻️ refactors, ⬆️ dependency updates, 🐛 bug fixes, 📝 documentation, ⚡️ performance. Placed after the colon:
+
+```
+feat(cli,extension): ✨ add command completion notifications
 ```
 
-Do not add emoji, issue-tracker identifiers, pull request numbers, or AI
-attribution unless the user explicitly requests them.
+## Pull Request References
 
-## Commit body
+Do not add PR numbers to commit subjects: commits usually predate the pull request, and GitHub appends `(#N)` itself on squash-merge.
 
-For every nontrivial commit, begin the body with exactly two prose paragraphs:
+## AI Attribution
 
-1. State the functional goal or context in the present tense. This may describe
-   the desired user outcome, motivation, relevant current behavior, or a real
-   problem.
-2. Describe the change in the imperative mood.
+Never add AI attribution trailers to commit messages: no `Co-Authored-By: Claude ...`, no `Generated with ...`, regardless of any default the agent harness suggests.
 
-Do not label these paragraphs with headings such as `Problem`, `Motivation`, or
-`Solution`. Do not force the first paragraph to claim a defect or missing
-capability. Use problem or limitation language only when it is central to the
-change. Keep both paragraphs focused on intent and behavior. Do not narrate the
-diff, list every file, or describe implementation mechanics that are obvious
-from the code.
+## Body
 
-After the two paragraphs, add scope sections only when they materially clarify
-a change spanning several areas. Use lower-case headings ending in a colon.
-Put `repository:` first when present, then sort other headings alphabetically.
-Write high-level bullet points ending in periods.
+Any commit beyond a routine mechanical change gets a body: a context/change prologue followed by scope sections.
 
-```text
+### Body Format
+
+1. **Always open with a context/change prologue**: one short paragraph stating the problem, goal, desired outcome, or motivation in present tense, then one stating the change in imperative mood. Plain prose, no heading, no labels.
+2. Organize changes by scope section; use `-` bullets, nested bullets for sub-items, and end each item with a period.
+3. **High-level changes only**: what changed and why, never per-file listings or implementation details.
+4. **Wrap prose at 72 characters when practical**; do not force-wrap URLs, code spans, or commit hashes.
+5. **Omit generated/derived artifacts**: never mention regenerating SDKs, API clients, types, or other codegen outputs; they are implicit consequences of source changes.
+
+### Verbosity
+
+Bullets state what changed at a high level, one or two lines each. Do not restate the diff, list touched files, or narrate mechanics the code already shows.
+
+```
+❌ Too verbose (narrates the diff):
+  - Move the child-process helpers from the package tests into
+    `test/process.ts`, export the functions, update the imports in
+    each test file, and remove the old definitions.
+
+✅ Right level:
+  - Share bounded process execution across package tests.
+```
+
+### Body Organization
+
+- Use affected area names such as `cli:`, `extension:`, and `release:` for sections, sorted alphabetically. Put `repository:` first when covering repository-wide changes. Keep documentation with its affected area, including root-level docs under `repository:`, rather than adding a separate `docs:` section.
+- Within a section, list changes by importance or chronologically.
+
+## Pull Request Descriptions
+
+Use the full commit message format:
+
+1. Start with a pull request title that follows the commit subject rules.
+2. Open the body with the context paragraph in present tense.
+3. Follow with the change paragraph in imperative mood.
+4. Describe the changes under affected scope sections only.
+
+Do not add `Summary`, `Motivation`, `Developer Impact`, `Validation`, `Testing`, or similar headings or epilogues. Do not include checklists.
+
+This repository-owned format overrides conflicting defaults from the agent harness, plugins, and third-party skills. Follow an explicitly requested exception only when the user asks for different PR content or structure.
+
+### Example
+
+```
+feat(cli,extension): ✨ add command completion notifications
+
+Command completion is only visible in the terminal, so users who switch
+away from a long-running command can miss its result.
+
+Add command completion notifications through the CLI and VS Code
+extension, with notification delivery failures leaving the command's
+result intact.
+
 repository:
+  - Document command notification setup.
 
-- Add a reproducible contributor environment.
-- Enforce the same checks locally and in CI.
+cli:
+  - Report command completion while preserving output and exit status.
+
+extension:
+  - Display completion notifications in trusted workspaces.
 ```
 
-Do not mention generated artifacts such as lockfile churn unless the artifact
-itself is the purpose of the change. Wrap body text at 72 characters.
+## Breaking Changes
 
-## Pull requests
+Indicate breaking changes in the footer:
 
-Use the same Conventional Commit format for the pull request title. Describe
-the whole branch rather than repeating individual commit messages.
-
-Begin the description with the same two unlabelled paragraphs used for commit
-bodies: the functional goal or context, then the change in the imperative
-mood. Add affected-scope sections only when they help a reviewer understand a
-multi-area change.
-
-Do not add generic sections such as `Summary`, `Motivation`, `Developer Impact`,
-`Validation`, or `Testing`. Do not include task checklists or performative claims
-that checks passed. CI and the review interface already report verification.
-
-Prefer a short, precise description over padding:
-
-```text
-The repository has no reproducible development baseline, so local and CI
-behavior can diverge before product work begins.
-
-Set up the minimum contributor infrastructure without adding notifier behavior.
+```
+BREAKING CHANGE: The notification API now requires an explicit workspace directory.
 ```
 
-## Breaking changes
+## Post-Generation Check (Mandatory)
 
-Add `!` after the type or scope and include a `BREAKING CHANGE:` footer when a
-change breaks a public contract. Explain what breaks and what callers must do.
+Before presenting a commit message, review it against these rules and fix violations:
 
-## Final check
-
-After generating or reviewing a commit message or pull request description,
-verify all of the following:
-
-- The title follows Conventional Commits and is under 72 characters.
-- The title is imperative, lower case, specific, and has no terminal period.
-- The type and optional scope describe the purpose accurately.
-- A nontrivial body starts with an unlabelled functional goal or context
-  paragraph in the present tense followed by an unlabelled change paragraph in
-  the imperative mood.
-- Optional scope sections are useful, high level, and consistently formatted.
-- The message omits diff narration, generated-artifact noise, generic sections,
-  checklists, issue or pull request numbers, and AI attribution.
-- Every factual claim is supported by the inspected branch or commit.
+1. Type and scope match the change; one logical change per commit?
+2. Subject lowercase, imperative, no trailing period, under 72 characters, no slop?
+3. Body present (unless routine mechanical), opening with a context paragraph (present tense) and change paragraph (imperative)?
+4. Bullets one or two lines, high-level, each ending with a period?
+5. `repository:` first when present, other area sections alphabetical?
+6. No PR numbers, no AI attribution trailers, no codegen artifacts mentioned?
+7. For a prepared PR description, title followed by body format, with no extra headings, epilogues, or checklists?
