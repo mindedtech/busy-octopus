@@ -22,9 +22,7 @@ let fixtureDirectory = "";
 let vscodeExecutablePath = "";
 
 beforeAll(async () => {
-  fixtureDirectory = await mkdtemp(
-    join(tmpdir(), "busy-octopus-vsix-lifecycle-"),
-  );
+  fixtureDirectory = await mkdtemp(join(tmpdir(), "bo-vsix-"));
   vscodeExecutablePath = await downloadAndUnzipVSCode(vscodeVersion);
 }, 120_000);
 
