@@ -4,6 +4,5 @@
     "src/library/index.ts",
     "src/extension/**/*.e2e.test.ts"
   ],
-  "ignoreDependencies": ["@vscode/test-electron"],
   "ignoreUnresolved": ["src/extension/.*\\.e2e\\.test\\.ts"]
 }

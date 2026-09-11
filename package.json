@@ -105,13 +105,20 @@
     "cli": "pnpm build && node dist/cli/main.js",
     "format": "biome format --write .",
     "measure:cli:cold-start": "pnpm build && node --experimental-strip-types scripts/measure/cli/cold-start.ts",
+    "package:npm": "pnpm build && node --experimental-strip-types scripts/package/npm.ts",
+    "package:release": "pnpm build && node --experimental-strip-types scripts/package/npm.ts && node --experimental-strip-types scripts/package/extension.ts && node --experimental-strip-types scripts/package/checksum.ts",
     "package:vsix": "pnpm build && node --experimental-strip-types scripts/package/extension.ts",
+    "release:preflight": "node --experimental-strip-types scripts/release/preflight.ts",
     "test": "vitest run src",
     "test:extension": "pnpm build && pnpm build:test:extension && node --experimental-strip-types scripts/test/extension.ts",
     "test:package": "vitest run test/package.spec.test.ts",
+    "test:release:controls": "vitest run test/release/controls",
+    "test:release:artifacts": "vitest run test/release/artifact.spec.test.ts",
+    "test:release": "node --experimental-strip-types scripts/test/release.ts",
     "test:vsix": "pnpm package:vsix && vitest run test/vsix.spec.test.ts",
     "test:watch": "vitest src",
-    "verify": "pnpm install --frozen-lockfile && pnpm check && pnpm test && pnpm test:package && pnpm test:vsix && pnpm test:extension && pnpm audit --prod --audit-level high"
+    "verify": "pnpm install --frozen-lockfile && pnpm check && pnpm test && pnpm test:release:controls && pnpm test:package && pnpm test:vsix && pnpm test:extension && pnpm audit --prod --audit-level high",
+    "verify:release": "pnpm verify && pnpm package:release && pnpm test:release"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.10",

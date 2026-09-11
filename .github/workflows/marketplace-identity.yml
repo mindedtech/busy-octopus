@@ -1,0 +1,54 @@
+name: Marketplace identity
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  identity:
+    if: github.repository == 'mindedtech/busy-octopus'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: release
+    permissions:
+      id-token: write
+    env:
+      AZURE_CORE_OUTPUT: none
+    steps:
+      - name: Check Entra configuration
+        shell: bash
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+        run: |
+          set -euo pipefail
+          uuid_pattern='^[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}$'
+          for variable in AZURE_CLIENT_ID AZURE_TENANT_ID; do
+            if [[ ! ${!variable} =~ $uuid_pattern ]]; then
+              echo "::error::Set $variable to a valid ID in the release environment variables."
+              exit 1
+            fi
+          done
+
+      - name: Sign in through Entra
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Read Marketplace User ID
+        shell: bash
+        run: |
+          set -euo pipefail
+          profile_id="$(az rest \
+            --method get \
+            --url https://app.vssps.visualstudio.com/_apis/profile/profiles/me \
+            --resource 499b84ac-1321-427f-aa17-267ca6975798 \
+            --query id --output tsv --only-show-errors)"
+          if [[ ! $profile_id =~ ^[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}$ ]]; then
+            echo '::error::The profile service did not return a valid Marketplace User ID.'
+            exit 1
+          fi
+          printf 'Marketplace User ID: `%s`\n\nAdd this ID to the Marketplace publisher with the **Contributor** role.\n' "$profile_id" >> "$GITHUB_STEP_SUMMARY"

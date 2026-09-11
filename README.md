@@ -17,7 +17,7 @@ pnpm add --global .
 In VS Code:
 
 1. Run **Extensions: Install from VSIX...**.
-2. Select `artifacts/busy-octopus-<version>.vsix`.
+2. Select `artifacts/<version>/busy-octopus-<version>.vsix`.
 3. Open and trust the workspace that should receive notifications.
 
 Install the CLI in the agent environment. For WSL and Dev Containers, run `pnpm add --global .` inside WSL or the container.
@@ -146,6 +146,13 @@ pnpm verify
 pnpm measure:cli:cold-start
 pnpm test:extension
 ```
+
+## Help and project policies
+
+- [Troubleshooting](https://github.com/mindedtech/busy-octopus/blob/main/docs/TROUBLESHOOTING.md)
+- [Privacy](https://github.com/mindedtech/busy-octopus/blob/main/docs/PRIVACY.md)
+- [Security](https://github.com/mindedtech/busy-octopus/blob/main/SECURITY.md)
+- [Changelog](https://github.com/mindedtech/busy-octopus/blob/main/CHANGELOG.md)
 
 ## License
 

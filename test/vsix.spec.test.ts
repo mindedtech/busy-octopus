@@ -3,35 +3,27 @@
  */
 
 import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import { unzipSync } from "fflate";
 import { expect, it } from "vitest";
 import { z } from "zod";
-import packageJson from "../package.json" with { type: "json" };
-
-const { name, version } = packageJson;
-const artifactPath = join("artifacts", `${name}-${version}.vsix`);
-
-const fileList = [
-  "[Content_Types].xml",
-  "extension.vsixmanifest",
-  "extension/LICENSE.txt",
-  "extension/dist/extension/extension.cjs",
-  "extension/native/windows-notify.ps1",
-  "extension/package.json",
-  "extension/readme.md",
-];
+import {
+  extensionArchivePath,
+  packageManifest,
+} from "../scripts/package/metadata.js";
+import { extensionFileList } from "./package/contents.js";
 
 it("contains only the extension runtime and required metadata", async () => {
   expect(
     Object.keys(
-      unzipSync(new Uint8Array(await readFile(artifactPath))),
+      unzipSync(new Uint8Array(await readFile(extensionArchivePath))),
     ).toSorted(),
-  ).toEqual(fileList);
+  ).toEqual(extensionFileList.toSorted());
 });
 
 it("targets the Busy Octopus UI extension", async () => {
-  const archive = unzipSync(new Uint8Array(await readFile(artifactPath)));
+  const archive = unzipSync(
+    new Uint8Array(await readFile(extensionArchivePath)),
+  );
   const manifest = z
     .object({
       capabilities: z.object({
@@ -45,8 +37,8 @@ it("targets the Busy Octopus UI extension", async () => {
         }),
       }),
       extensionKind: z.tuple([z.literal("ui")]),
-      name: z.literal("busy-octopus"),
-      publisher: z.literal("mindedtech"),
+      name: z.literal(packageManifest.name),
+      publisher: z.literal(packageManifest.publisher),
     })
     .parse(
       JSON.parse(new TextDecoder().decode(archive["extension/package.json"])),
@@ -71,7 +63,7 @@ it("targets the Busy Octopus UI extension", async () => {
       },
     },
     extensionKind: ["ui"],
-    name: "busy-octopus",
-    publisher: "mindedtech",
+    name: packageManifest.name,
+    publisher: packageManifest.publisher,
   } satisfies typeof manifest);
 });
