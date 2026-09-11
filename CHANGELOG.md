@@ -1,0 +1,14 @@
+# Changelog
+
+## Unreleased
+
+### Added
+
+- VS Code notifications for trusted local, WSL, and Dev Container workspaces.
+- Native Windows notifications with optional sound and workspace routing.
+- Windows taskbar flashing for the workspace that needs attention.
+- Codex and Claude Code hook setup.
+- Command completion notifications through `busy-octopus run`.
+- A Node.js notification API and CLI.
+
+Future releases use headings in the form `## <version> - <YYYY-MM-DD>`.

@@ -2,7 +2,7 @@
  * @file Verify the distributable package from clean consumer projects.
  */
 
-import { execFile, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import {
   mkdir,
@@ -15,15 +15,17 @@ import {
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { promisify } from "node:util";
 import { assert, expect, it } from "vitest";
 import { z } from "zod";
+import { packageManifest } from "../scripts/package/metadata.js";
 import type { ClaudeCodeHook } from "../src/integration/agent/claude-code/adapter.js";
 import type { CodexHook } from "../src/integration/agent/codex/adapter.js";
+import { packageFileList } from "./package/contents.js";
+import {
+  executeTestCommand,
+  MAXIMUM_PROCESS_OUTPUT_BYTE_COUNT,
+} from "./process.js";
 
-const execFileAsync = promisify(execFile);
-
-const MAXIMUM_PROCESS_OUTPUT_BYTE_COUNT = 1_048_576;
 const repositoryDirectory = join(dirname(fileURLToPath(import.meta.url)), "..");
 const artifactDirectory = join(
   repositoryDirectory,
@@ -40,7 +42,7 @@ const pnpmProcess =
     : { argumentList: [], command: "pnpm" };
 
 const PackResult = z.strictObject({
-  name: z.literal("busy-octopus"),
+  name: z.literal(packageManifest.name),
   version: z.string(),
   filename: z.string(),
   files: z.array(z.strictObject({ path: z.string() })),
@@ -62,77 +64,6 @@ const QueueRequest = z.strictObject({
   source: z.strictObject({ kind: z.string(), name: z.string() }).nullable(),
 });
 
-const allowFileList = [
-  "LICENSE",
-  "README.md",
-  "dist/cli/main.js",
-  "dist/extension/extension.cjs",
-  "dist/library/index.d.ts",
-  "dist/library/index.js",
-  "dist/library/notify.d.ts",
-  "dist/library/notify.js",
-  "dist/protocol/notification.d.ts",
-  "dist/protocol/notification.js",
-  "dist/protocol/text.d.ts",
-  "dist/protocol/text.js",
-  "dist/protocol/workspace.d.ts",
-  "dist/protocol/workspace.js",
-  "dist/queue/file-system.d.ts",
-  "dist/queue/file-system.js",
-  "dist/queue/location.d.ts",
-  "dist/queue/location.js",
-  "dist/queue/native.d.ts",
-  "dist/queue/native.js",
-  "dist/queue/queue.d.ts",
-  "dist/queue/queue.js",
-  "dist/workspace/identity.d.ts",
-  "dist/workspace/identity.js",
-  "dist/workspace/resolution.d.ts",
-  "dist/workspace/resolution.js",
-  "dist/workspace/queue.d.ts",
-  "dist/workspace/queue.js",
-  "dist/workspace/runtime.d.ts",
-  "dist/workspace/runtime.js",
-  "package.json",
-];
-
-const execute = async ({
-  argumentList,
-  command,
-  directory,
-  environment = process.env,
-}: {
-  argumentList: string[];
-  command: string;
-  directory: string;
-  environment?: NodeJS.ProcessEnv;
-}): Promise<string> => {
-  try {
-    const { stdout } = await execFileAsync(command, argumentList, {
-      cwd: directory,
-      encoding: "utf8",
-      env: environment,
-      maxBuffer: MAXIMUM_PROCESS_OUTPUT_BYTE_COUNT,
-      windowsHide: true,
-    });
-    return stdout;
-  } catch (error: unknown) {
-    if (!(error instanceof Error)) {
-      throw error;
-    }
-    const outputList = [
-      "stdout" in error && typeof error.stdout === "string" ? error.stdout : "",
-      "stderr" in error && typeof error.stderr === "string" ? error.stderr : "",
-    ].filter((output) => output.length > 0);
-    if (outputList.length === 0) {
-      throw error;
-    }
-    throw new Error(`${error.message}\n${outputList.join("\n")}`, {
-      cause: error,
-    });
-  }
-};
-
 const runPnpm = async ({
   argumentList,
   directory = repositoryDirectory,
@@ -142,7 +73,7 @@ const runPnpm = async ({
   directory?: string;
   environment?: NodeJS.ProcessEnv;
 }): Promise<string> =>
-  execute({
+  executeTestCommand({
     argumentList: [...pnpmProcess.argumentList, ...argumentList],
     command: pnpmProcess.command,
     directory,
@@ -266,7 +197,7 @@ it("verifies the packed library and CLI", { timeout: 30_000 }, async () => {
       )
         .files.map(({ path }) => path)
         .toSorted(),
-    ).toEqual(allowFileList.toSorted());
+    ).toEqual(packageFileList.toSorted());
 
     await writeFile(
       join(fixtureDirectory, "package.json"),
@@ -571,7 +502,7 @@ process.stdout.write(JSON.stringify(await library.notify({
     expect(
       NotifyResult.parse(
         JSON.parse(
-          await execute({
+          await executeTestCommand({
             argumentList: [javascriptPath, workspaceDirectory, notificationId],
             command: process.execPath,
             directory: fixtureDirectory,
@@ -602,7 +533,7 @@ const result: Promise<NotifyResult> = notify(input);
 void result;
 `,
     );
-    await execute({
+    await executeTestCommand({
       argumentList: [
         join(repositoryDirectory, "node_modules", "typescript", "bin", "tsc"),
         "--noEmit",
@@ -636,7 +567,7 @@ void result;
 
     const primaryCheckoutDirectory = join(fixtureDirectory, "primary-checkout");
     const worktreeDirectory = join(fixtureDirectory, "linked-worktree");
-    await execute({
+    await executeTestCommand({
       argumentList: [
         "clone",
         "--local",
@@ -648,7 +579,7 @@ void result;
       command: "git",
       directory: fixtureDirectory,
     });
-    await execute({
+    await executeTestCommand({
       argumentList: [
         "-C",
         primaryCheckoutDirectory,

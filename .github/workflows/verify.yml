@@ -6,6 +6,11 @@ on:
     branches: [main]
   workflow_dispatch:
   workflow_call:
+    inputs:
+      release:
+        description: Run release lifecycle tests.
+        required: false
+        type: boolean
 
 permissions:
   contents: read
@@ -32,6 +37,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ github.sha }}
 
       - name: Set up pnpm and Node.js
         uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
@@ -43,15 +49,47 @@ jobs:
       - name: Verify repository
         run: pnpm verify
 
+  release:
+    name: Release (${{ matrix.os }})
+    if: ${{ inputs.release }}
+    needs: verify
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Set up pnpm and Node.js
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
+        with:
+          cache: true
+          install: true
+          runtime: node@22
+
+      - name: Verify release lifecycle
+        run: pnpm package:release && pnpm test:release
+
   status:
     name: Verify
     if: ${{ always() }}
-    needs: [security, verify]
+    needs: [release, security, verify]
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:
       - name: Require successful verification
         env:
+          RELEASE_RESULT: ${{ needs.release.result }}
           SECURITY_RESULT: ${{ needs.security.result }}
           VERIFY_RESULT: ${{ needs.verify.result }}
-        run: test "$SECURITY_RESULT" = success && test "$VERIFY_RESULT" = success
+        run: >-
+          test "$SECURITY_RESULT" = success &&
+          test "$VERIFY_RESULT" = success &&
+          { test "$RELEASE_RESULT" = success ||
+          test "$RELEASE_RESULT" = skipped; }

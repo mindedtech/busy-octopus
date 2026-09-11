@@ -1,0 +1,398 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      tag-sha: ${{ steps.preflight.outputs.tag-sha }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Set up pnpm and Node.js
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
+        with:
+          install: true
+          runtime: node@22
+
+      - name: Check release controls
+        id: preflight
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}
+        run: pnpm release:preflight
+
+  verify:
+    name: Verify
+    needs: preflight
+    uses: ./.github/workflows/verify.yml
+    with:
+      release: true
+
+  package:
+    name: Package
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.package.outputs.version }}
+      artifact-id: ${{ steps.artifact.outputs.artifact-id }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Set up pnpm and Node.js
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
+        with:
+          install: true
+          runtime: node@22
+
+      - name: Build release artifacts
+        run: pnpm package:release
+
+      - name: Test release artifacts
+        run: pnpm test:release
+
+      - name: Read package version
+        id: package
+        shell: bash
+        run: echo "version=$(node --print "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Upload release artifacts
+        id: artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: busy-octopus-${{ steps.package.outputs.version }}
+          path: |
+            artifacts/${{ steps.package.outputs.version }}/SHA256SUMS
+            artifacts/${{ steps.package.outputs.version }}/busy-octopus-${{ steps.package.outputs.version }}.tgz
+            artifacts/${{ steps.package.outputs.version }}/busy-octopus-${{ steps.package.outputs.version }}.vsix
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Present final artifacts for approval
+        env:
+          ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
+          RELEASE_VERSION: ${{ steps.package.outputs.version }}
+        run: |
+          {
+            echo "Review the final publication artifacts before approving the release environment."
+            echo "These archives were rebuilt for this run; candidate approval does not approve these bytes."
+            echo "Commit: $GITHUB_SHA"
+            echo "[Download final artifacts]($ARTIFACT_URL)"
+            echo "Recovery: use Re-run failed jobs on this run to retain the approved archives and skip successful publishers."
+            echo '```text'
+            cat "artifacts/$RELEASE_VERSION/SHA256SUMS"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  npm:
+    name: npm
+    needs: [package, preflight]
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Require publication authorization
+        env:
+          RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}
+        run: test "$RELEASE_ENABLED" = true
+
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Set up pnpm and Node.js
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
+        with:
+          install: false
+          runtime: node@24
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          artifact-ids: ${{ needs.package.outputs.artifact-id }}
+          path: artifacts
+
+      - name: Verify archive checksums
+        working-directory: artifacts
+        run: sha256sum --check --strict SHA256SUMS
+
+      - name: Confirm the release tag still matches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG_SHA: ${{ needs.preflight.outputs.tag-sha }}
+        run: |
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" --jq '.object.sha')" = "$RELEASE_TAG_SHA"
+
+      - name: Publish npm package
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ needs.package.outputs.version }}
+        run: |
+          set -euo pipefail
+          archive="artifacts/busy-octopus-$RELEASE_VERSION.tgz"
+          integrity="sha512-$(openssl dgst -sha512 -binary "$archive" | openssl base64 -A)"
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+          status="$(curl --silent --show-error --max-time 15 --max-filesize 1048576 \
+            --output "$response_file" --write-out '%{http_code}' \
+            "https://registry.npmjs.org/busy-octopus/$RELEASE_VERSION")"
+          case "$status" in
+            200)
+              if ! jq -e --arg version "$RELEASE_VERSION" --arg integrity "$integrity" \
+                '.name == "busy-octopus" and .version == $version and .dist.integrity == $integrity' \
+                "$response_file" > /dev/null; then
+                echo '::error::The existing npm version does not match the approved archive. Stop and investigate.'
+                exit 1
+              fi
+              echo 'The approved npm archive already exists; continuing without another upload.'
+              ;;
+            404)
+              npm publish "$archive" --access public --ignore-scripts --registry=https://registry.npmjs.org
+              ;;
+            *)
+              echo '::error::Cannot determine npm publication state. Retry after checking registry status.'
+              exit 1
+              ;;
+          esac
+
+  marketplace:
+    name: VS Code Marketplace
+    needs: [npm, package, preflight]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: release
+    env:
+      AZURE_CORE_OUTPUT: none
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Require publication authorization
+        env:
+          RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}
+        run: test "$RELEASE_ENABLED" = true
+
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Set up pnpm and Node.js
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
+        with:
+          install: false
+          runtime: node@22
+
+      - name: Install publishing tools without lifecycle scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          artifact-ids: ${{ needs.package.outputs.artifact-id }}
+          path: artifacts
+
+      - name: Verify archive checksums
+        working-directory: artifacts
+        run: sha256sum --check --strict SHA256SUMS
+
+      - name: Confirm npm publication
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ needs.package.outputs.version }}
+        run: |
+          set -euo pipefail
+          integrity="sha512-$(openssl dgst -sha512 -binary "artifacts/busy-octopus-$RELEASE_VERSION.tgz" | openssl base64 -A)"
+          for attempt in {1..6}; do
+            if remote_integrity="$(npm view "busy-octopus@$RELEASE_VERSION" dist.integrity --json --registry=https://registry.npmjs.org --fetch-retries=0 --fetch-timeout=10000 | jq -er 'select(type == "string" and length > 0)')"; then
+              if [[ "$remote_integrity" != "$integrity" ]]; then
+                echo '::error::The npm version does not match the approved archive. Stop and investigate.'
+                exit 1
+              fi
+              exit 0
+            fi
+            if [[ "$attempt" -lt 6 ]]; then sleep 5; fi
+          done
+          echo '::error::Cannot confirm npm publication. Retry failed jobs after checking registry status.'
+          exit 1
+
+      - name: Check existing Marketplace version
+        id: marketplace
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ needs.package.outputs.version }}
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          archive_file="$(mktemp)"
+          trap 'rm -f "$response_file" "$archive_file"' EXIT
+          curl --silent --show-error --fail --max-time 15 --max-filesize 5242880 \
+            --header 'Content-Type: application/json' \
+            --header 'Accept: application/json;api-version=3.0-preview.1' \
+            --data '{"filters":[{"criteria":[{"filterType":7,"value":"mindedtech.busy-octopus"}],"pageNumber":1,"pageSize":1}],"assetTypes":[],"flags":1}' \
+            --output "$response_file" \
+            https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery
+          count="$(jq -er --arg version "$RELEASE_VERSION" \
+            '[.results[].extensions[] | select(.publisher.publisherName == "mindedtech" and .extensionName == "busy-octopus") | .versions[] | select(.version == $version)] | length' \
+            "$response_file")"
+          if [[ "$count" == 0 ]]; then
+            echo 'exists=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! curl --silent --show-error --fail --location --proto '=https' --proto-redir '=https' \
+            --max-time 30 --max-filesize 52428800 --output "$archive_file" \
+            "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/mindedtech/vsextensions/busy-octopus/$RELEASE_VERSION/vspackage"; then
+            echo '::error::The Marketplace version already exists but cannot be downloaded. Check validation status before retrying.'
+            exit 1
+          fi
+          if ! cmp --silent "$archive_file" "artifacts/busy-octopus-$RELEASE_VERSION.vsix"; then
+            echo '::error::The existing Marketplace version does not match the approved archive. Stop and investigate.'
+            exit 1
+          fi
+          echo 'exists=true' >> "$GITHUB_OUTPUT"
+          echo 'The approved Marketplace archive already exists; continuing without another upload.'
+
+      - name: Check Entra configuration
+        if: steps.marketplace.outputs.exists == 'false'
+        shell: bash
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+        run: |
+          set -euo pipefail
+          uuid_pattern='^[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}$'
+          for variable in AZURE_CLIENT_ID AZURE_TENANT_ID; do
+            if [[ ! ${!variable} =~ $uuid_pattern ]]; then
+              echo "::error::Set $variable to a valid ID in the release environment variables."
+              exit 1
+            fi
+          done
+
+      - name: Sign in through Entra
+        if: steps.marketplace.outputs.exists == 'false'
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Confirm the release tag still matches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG_SHA: ${{ needs.preflight.outputs.tag-sha }}
+        run: |
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" --jq '.object.sha')" = "$RELEASE_TAG_SHA"
+
+      - name: Publish VS Code extension
+        if: steps.marketplace.outputs.exists == 'false'
+        run: >-
+          pnpm exec vsce publish
+          --azure-credential
+          --packagePath "artifacts/busy-octopus-${{ needs.package.outputs.version }}.vsix"
+
+  release:
+    name: GitHub
+    needs: [marketplace, npm, package, preflight]
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - name: Require publication authorization
+        env:
+          RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}
+        run: test "$RELEASE_ENABLED" = true
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          artifact-ids: ${{ needs.package.outputs.artifact-id }}
+          path: artifacts
+
+      - name: Verify archive checksums
+        working-directory: artifacts
+        run: sha256sum --check --strict SHA256SUMS
+
+      - name: Confirm Marketplace publication
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ needs.package.outputs.version }}
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          archive_file="$(mktemp)"
+          trap 'rm -f "$response_file" "$archive_file"' EXIT
+          for attempt in {1..6}; do
+            if curl --silent --show-error --fail --max-time 15 --max-filesize 5242880 \
+              --header 'Content-Type: application/json' \
+              --header 'Accept: application/json;api-version=3.0-preview.1' \
+              --data '{"filters":[{"criteria":[{"filterType":7,"value":"mindedtech.busy-octopus"},{"filterType":8,"value":"Microsoft.VisualStudio.Code"},{"filterType":12,"value":"4096"}],"pageNumber":1,"pageSize":1}],"assetTypes":[],"flags":33}' \
+              --output "$response_file" \
+              https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery && \
+              jq -e --arg version "$RELEASE_VERSION" \
+                'any(.results[].extensions[]; .publisher.publisherName == "mindedtech" and .extensionName == "busy-octopus" and any(.versions[]; .version == $version) and (.flags | split(",") | map(gsub("^ +| +$"; "")) | index("public") != null and index("validated") != null and index("unpublished") == null and index("disabled") == null and index("locked") == null))' \
+                "$response_file" > /dev/null && \
+              curl --silent --show-error --fail --location --proto '=https' --proto-redir '=https' \
+                --max-time 30 --max-filesize 52428800 --output "$archive_file" \
+                "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/mindedtech/vsextensions/busy-octopus/$RELEASE_VERSION/vspackage"; then
+              if ! cmp --silent "$archive_file" "artifacts/busy-octopus-$RELEASE_VERSION.vsix"; then
+                echo '::error::The Marketplace download does not match the approved archive. Stop and investigate.'
+                exit 1
+              fi
+              exit 0
+            fi
+            if [[ "$attempt" -lt 6 ]]; then sleep 5; fi
+          done
+          echo '::error::The Marketplace version is not visible yet. Retry failed jobs after checking Marketplace status.'
+          exit 1
+
+      - name: Confirm the release tag still matches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG_SHA: ${{ needs.preflight.outputs.tag-sha }}
+        run: |
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" --jq '.object.sha')" = "$RELEASE_TAG_SHA"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "${{ github.ref_name }}"
+          artifacts/SHA256SUMS
+          "artifacts/busy-octopus-${{ needs.package.outputs.version }}.tgz"
+          "artifacts/busy-octopus-${{ needs.package.outputs.version }}.vsix"
+          --generate-notes
+          --title "${{ github.ref_name }}"
+          --verify-tag
+          --repo "${{ github.repository }}"

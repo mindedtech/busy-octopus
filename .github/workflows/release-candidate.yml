@@ -1,0 +1,55 @@
+name: Release candidate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify
+    uses: ./.github/workflows/verify.yml
+    with:
+      release: true
+
+  package:
+    name: Package
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Set up pnpm and Node.js
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
+        with:
+          cache: true
+          install: true
+          runtime: node@22
+
+      - name: Build release artifacts
+        run: pnpm package:release
+
+      - name: Test release artifacts
+        run: pnpm test:release
+
+      - name: Read package version
+        id: package
+        shell: bash
+        run: echo "version=$(node --print "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Upload release candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: busy-octopus-${{ steps.package.outputs.version }}-${{ github.sha }}
+          path: |
+            artifacts/${{ steps.package.outputs.version }}/SHA256SUMS
+            artifacts/${{ steps.package.outputs.version }}/busy-octopus-${{ steps.package.outputs.version }}.tgz
+            artifacts/${{ steps.package.outputs.version }}/busy-octopus-${{ steps.package.outputs.version }}.vsix
+          retention-days: 7
+          if-no-files-found: error
