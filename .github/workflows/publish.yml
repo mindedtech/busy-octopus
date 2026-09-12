@@ -111,6 +111,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     environment: release
+    env:
+      NPM_VERSION: 11.19.1
     permissions:
       contents: read
       id-token: write
@@ -131,6 +133,9 @@ jobs:
         with:
           install: false
           runtime: node@24
+
+      - name: Check npm CLI
+        run: test "$(pnpm --silent dlx "npm@$NPM_VERSION" --version)" = "$NPM_VERSION"
 
       - name: Download release artifacts
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -174,7 +179,7 @@ jobs:
               echo 'The approved npm archive already exists; continuing without another upload.'
               ;;
             404)
-              npm publish "$archive" --access public --ignore-scripts --registry=https://registry.npmjs.org
+              pnpm dlx "npm@$NPM_VERSION" publish "$archive" --access public --ignore-scripts --registry=https://registry.npmjs.org
               ;;
             *)
               echo '::error::Cannot determine npm publication state. Retry after checking registry status.'
@@ -352,7 +357,7 @@ jobs:
           response_file="$(mktemp)"
           archive_file="$(mktemp)"
           trap 'rm -f "$response_file" "$archive_file"' EXIT
-          for attempt in {1..6}; do
+          for attempt in {1..61}; do
             if curl --silent --show-error --fail --max-time 15 --max-filesize 5242880 \
               --header 'Content-Type: application/json' \
               --header 'Accept: application/json;api-version=3.0-preview.1' \
@@ -371,7 +376,7 @@ jobs:
               fi
               exit 0
             fi
-            if [[ "$attempt" -lt 6 ]]; then sleep 5; fi
+            if [[ "$attempt" -lt 61 ]]; then sleep 5; fi
           done
           echo '::error::The Marketplace version is not visible yet. Retry failed jobs after checking Marketplace status.'
           exit 1
