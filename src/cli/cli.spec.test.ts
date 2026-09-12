@@ -18,6 +18,19 @@ describe("program", () => {
     expect(result.stdout).toContain("run [options] <command> [argument...]");
   });
 
+  it.each(["-v", "--version"])(
+    "shows the package version: %s",
+    async (flag) => {
+      const result = await runTestCli([flag]);
+
+      expect(result).toEqual({
+        exitCode: 0,
+        stderr: "",
+        stdout: expect.stringMatching(/^\d+\.\d+\.\d+\n$/u),
+      });
+    },
+  );
+
   it("rejects an unknown command", async () => {
     const result = await runTestCli(["unknown"]);
 

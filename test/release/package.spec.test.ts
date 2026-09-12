@@ -85,6 +85,14 @@ it("installs and runs with npm", { timeout: 60_000 }, async () => {
 
     expect(help).toContain("Usage: busy-octopus");
 
+    const cliVersion = await executeNpm({
+      argumentList: ["exec", "--", "busy-octopus", "--version"],
+      directory: fixtureDirectory,
+      environment,
+    });
+
+    expect(cliVersion).toBe(`${packageManifest.version}\n`);
+
     const consumerPath = join(fixtureDirectory, "consumer.mjs");
     await writeFile(
       consumerPath,
