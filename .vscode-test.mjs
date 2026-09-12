@@ -33,6 +33,6 @@ export default defineConfig({
     timeout: 15_000,
     ui: "tdd",
   },
-  version: "1.134.0",
+  version: "1.137.0",
   workspaceFolder,
 });

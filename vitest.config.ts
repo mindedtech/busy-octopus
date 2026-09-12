@@ -2,12 +2,11 @@
  * @file Configure the project test runner.
  */
 
-import { defineConfig } from "vitest/config";
-
-export default defineConfig({
+export default {
   test: {
     environment: "node",
     include: ["**/*.spec.test.ts"],
+    maxWorkers: 4,
     restoreMocks: true,
   },
-});
+};

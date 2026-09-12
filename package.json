@@ -9,7 +9,7 @@
   "type": "module",
   "engines": {
     "node": ">=22",
-    "vscode": "^1.134.0"
+    "vscode": "^1.137.0"
   },
   "main": "./dist/extension/extension.cjs",
   "activationEvents": [
@@ -86,7 +86,7 @@
     "assets/icon.png",
     "dist"
   ],
-  "packageManager": "pnpm@11.24.0",
+  "packageManager": "pnpm@12.4.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mindedtech/busy-octopus.git"
@@ -122,26 +122,27 @@
     "verify:release": "pnpm verify && pnpm package:release && pnpm test:release"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.10",
+    "@biomejs/biome": "2.5.13",
     "@types/chai": "5.2.3",
     "@types/mocha": "10.0.10",
-    "@types/node": "22.20.1",
+    "@types/node": "22.20.2",
     "@types/sinon": "22.0.0",
-    "@types/vscode": "1.134.0",
+    "@types/vscode": "1.137.0",
     "@vscode/test-cli": "0.0.15",
     "@vscode/test-electron": "3.1.0",
     "@vscode/vsce": "3.9.2",
     "chai": "6.2.2",
     "esbuild": "0.28.2",
     "fflate": "0.8.3",
-    "knip": "6.32.3",
+    "knip": "6.35.1",
     "sinon": "22.1.0",
     "typescript": "7.0.2",
-    "vitest": "4.1.11"
+    "vite": "8.3.0",
+    "vitest": "5.0.0"
   },
   "dependencies": {
     "@commander-js/extra-typings": "15.0.0",
     "commander": "15.0.0",
-    "zod": "4.4.3"
+    "zod": "4.6.2"
   }
 }
