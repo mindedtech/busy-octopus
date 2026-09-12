@@ -2,10 +2,9 @@
   "name": "busy-octopus",
   "displayName": "Busy Octopus",
   "description": "VS Code extension to notify you when an agent or workspace needs attention",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "publisher": "mindedtech",
   "license": "MIT",
-  "private": true,
   "type": "module",
   "engines": {
     "node": ">=22",
