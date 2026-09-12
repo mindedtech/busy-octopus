@@ -1,6 +1,7 @@
 {
   "name": "busy-octopus",
   "displayName": "Busy Octopus",
+  "icon": "assets/icon.png",
   "description": "VS Code extension to notify you when an agent or workspace needs attention",
   "version": "0.1.0",
   "publisher": "mindedtech",
@@ -82,6 +83,7 @@
     }
   },
   "files": [
+    "assets/icon.png",
     "dist"
   ],
   "packageManager": "pnpm@11.24.0",

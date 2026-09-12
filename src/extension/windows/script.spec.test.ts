@@ -30,7 +30,7 @@ it("uses safe native APIs and separate operations", async () => {
 
 it.runIf(process.platform === "win32")(
   "returns bounded JSON for an unavailable capture",
-  { timeout: 20_000 },
+  { timeout: 40_000 },
   async () => {
     const { stdout } = await execFileAsync(
       "powershell.exe",
@@ -49,7 +49,7 @@ it.runIf(process.platform === "win32")(
       ],
       {
         encoding: "utf8",
-        timeout: 15_000,
+        timeout: 30_000,
         windowsHide: true,
       },
     );

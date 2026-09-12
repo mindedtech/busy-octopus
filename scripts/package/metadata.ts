@@ -40,6 +40,7 @@ const PackageJson = z.object({
   displayName: z.string(),
   engines: z.object({ vscode: z.string() }),
   extensionKind: z.array(z.string()),
+  icon: z.literal("assets/icon.png"),
   license: z.string(),
   main: z.string(),
   name: z.literal("busy-octopus"),

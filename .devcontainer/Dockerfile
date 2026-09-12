@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/devcontainers/javascript-node:26-bookworm
 
 ARG CLAUDE_CODE_VERSION=2.1.247
-ARG CODEX_VERSION=0.149.0
+ARG CODEX_VERSION=0.154.0
 
 RUN apt-get update \
   && apt-get install --yes --no-install-recommends \

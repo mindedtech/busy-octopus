@@ -5,6 +5,7 @@
 export const packageFileList = [
   "LICENSE",
   "README.md",
+  "assets/icon.png",
   "dist/cli/main.js",
   "dist/extension/extension.cjs",
   "dist/library/index.d.ts",
@@ -40,6 +41,7 @@ export const extensionFileList = [
   "[Content_Types].xml",
   "extension.vsixmanifest",
   "extension/LICENSE.txt",
+  "extension/assets/icon.png",
   "extension/changelog.md",
   "extension/dist/extension/extension.cjs",
   "extension/native/windows-notify.ps1",
