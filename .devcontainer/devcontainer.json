@@ -51,8 +51,8 @@
   },
   "dockerComposeFile": ["compose.yml", "compose.worktree.gen.local.yml"],
   "features": {
-    "ghcr.io/devcontainers/features/github-cli:1.1.1": {
-      "version": "2.97.0"
+    "ghcr.io/devcontainers/features/github-cli:1.1.2": {
+      "version": "2.100.0"
     }
   },
   "initializeCommand": ".devcontainer/initializeCommand.sh",
