@@ -10,6 +10,7 @@ import { afterEach, assert, describe, expect, it } from "vitest";
 import { executeTestCommand } from "../../process.js";
 
 const workflow = await readFile(".github/workflows/publish.yml", "utf8");
+const npmVersion = workflow.match(/^ {6}NPM_VERSION: (\d+\.\d+\.\d+)$/mu)?.[1];
 const directoryList: string[] = [];
 const version = "1.2.3";
 const archive = "synthetic release archive";
@@ -88,6 +89,16 @@ ${counter}cat "$MOCK_RESPONSE_FILE"
     { mode: 0o700 },
   );
   await writeFile(
+    join(directory, "pnpm"),
+    `#!/bin/bash
+if [[ "$1" == --silent ]]; then shift; fi
+if [[ "$1" != dlx || "$2" != "npm@$NPM_VERSION" ]]; then exit 1; fi
+shift 2
+exec npm "$@"
+`,
+    { mode: 0o700 },
+  );
+  await writeFile(
     join(directory, "curl"),
     `#!/bin/bash
 ${counter}
@@ -130,6 +141,7 @@ if [[ "$status_output" == 1 ]]; then printf '%s' "$status"; fi
           ...process.env,
           PATH: `${directory}${delimiter}${process.env.PATH}`,
           RELEASE_VERSION: version,
+          NPM_VERSION: npmVersion,
           MOCK_COUNT_FILE: join(directory, "count"),
           MOCK_RESPONSE_FILE: join(directory, "response.json"),
           MOCK_FAILURE_COUNT: String(failureCount),
@@ -199,6 +211,14 @@ it("orders publishers and keeps downloads bound to the original artifact", () =>
   expect(
     workflow.indexOf("name: Confirm Marketplace publication"),
   ).toBeLessThan(workflow.indexOf("name: Create GitHub release"));
+});
+
+it("uses one pinned npm CLI for its check and publication", () => {
+  expect(npmVersion).toMatch(/^\d+\.\d+\.\d+$/u);
+  expect(workflow).toContain(
+    'test "$(pnpm --silent dlx "npm@$NPM_VERSION" --version)" = "$NPM_VERSION"',
+  );
+  expect(workflow).toContain('pnpm dlx "npm@$NPM_VERSION" publish');
 });
 
 // Publication jobs run only on Ubuntu; these tests execute their Bash steps.
@@ -276,7 +296,7 @@ describe.skipIf(process.platform !== "linux")("registry confirmation", () => {
       await expect(
         fixture.run("Confirm Marketplace publication"),
       ).rejects.toThrow("Marketplace version is not visible");
-      expect(await fixture.count()).toBe(6);
+      expect(await fixture.count()).toBe(61);
     },
   );
 });
