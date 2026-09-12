@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/mindedtech/busy-octopus/main/assets/icon.png" alt="Busy Octopus logo" width="128" height="128">
+
 # Busy Octopus
 
 **Multitask like an octopus.**

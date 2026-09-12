@@ -37,6 +37,7 @@ it("targets the Busy Octopus UI extension", async () => {
         }),
       }),
       extensionKind: z.tuple([z.literal("ui")]),
+      icon: z.literal("assets/icon.png"),
       name: z.literal(packageManifest.name),
       publisher: z.literal(packageManifest.publisher),
     })
@@ -63,7 +64,11 @@ it("targets the Busy Octopus UI extension", async () => {
       },
     },
     extensionKind: ["ui"],
+    icon: "assets/icon.png",
     name: packageManifest.name,
     publisher: packageManifest.publisher,
   } satisfies typeof manifest);
+  expect(archive[`extension/${manifest.icon}`]).toEqual(
+    new Uint8Array(await readFile(manifest.icon)),
+  );
 });

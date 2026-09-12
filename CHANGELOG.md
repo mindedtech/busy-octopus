@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- An octopus icon with ringing arcs for the VS Code extension.
+
 ## 0.1.0
 
 ### Added

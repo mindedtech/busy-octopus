@@ -21,9 +21,14 @@ try {
   await Promise.all([
     mkdir(join(stageDirectory, "dist", "extension"), { recursive: true }),
     mkdir(join(stageDirectory, "native"), { recursive: true }),
+    mkdir(join(stageDirectory, "assets"), { recursive: true }),
   ]);
 
   await Promise.all([
+    cp(
+      join(repositoryDirectory, packageManifest.icon),
+      join(stageDirectory, packageManifest.icon),
+    ),
     cp(join(repositoryDirectory, "LICENSE"), join(stageDirectory, "LICENSE")),
     cp(
       join(repositoryDirectory, "CHANGELOG.md"),
@@ -47,6 +52,7 @@ try {
         {
           ...packageManifest,
           files: [
+            packageManifest.icon,
             "dist/extension/extension.cjs",
             "native/windows-notify.ps1",
             "CHANGELOG.md",
