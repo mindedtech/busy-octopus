@@ -156,7 +156,7 @@ jobs:
           RELEASE_VERSION: ${{ needs.package.outputs.version }}
         run: |
           set -euo pipefail
-          archive="artifacts/busy-octopus-$RELEASE_VERSION.tgz"
+          archive="./artifacts/busy-octopus-$RELEASE_VERSION.tgz"
           integrity="sha512-$(openssl dgst -sha512 -binary "$archive" | openssl base64 -A)"
           response_file="$(mktemp)"
           trap 'rm -f "$response_file"' EXIT
@@ -267,7 +267,7 @@ jobs:
             echo 'exists=false' >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if ! curl --silent --show-error --fail --location --proto '=https' --proto-redir '=https' \
+          if ! curl --silent --show-error --fail --location --compressed --proto '=https' --proto-redir '=https' \
             --max-time 30 --max-filesize 52428800 --output "$archive_file" \
             "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/mindedtech/vsextensions/busy-octopus/$RELEASE_VERSION/vspackage"; then
             echo '::error::The Marketplace version already exists but cannot be downloaded. Check validation status before retrying.'
@@ -362,7 +362,7 @@ jobs:
               jq -e --arg version "$RELEASE_VERSION" \
                 'any(.results[].extensions[]; .publisher.publisherName == "mindedtech" and .extensionName == "busy-octopus" and any(.versions[]; .version == $version) and (.flags | split(",") | map(gsub("^ +| +$"; "")) | index("public") != null and index("validated") != null and index("unpublished") == null and index("disabled") == null and index("locked") == null))' \
                 "$response_file" > /dev/null && \
-              curl --silent --show-error --fail --location --proto '=https' --proto-redir '=https' \
+              curl --silent --show-error --fail --location --compressed --proto '=https' --proto-redir '=https' \
                 --max-time 30 --max-filesize 52428800 --output "$archive_file" \
                 "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/mindedtech/vsextensions/busy-octopus/$RELEASE_VERSION/vspackage"; then
               if ! cmp --silent "$archive_file" "artifacts/busy-octopus-$RELEASE_VERSION.vsix"; then
