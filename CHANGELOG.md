@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 0.1.2
+
+### Added
+
+- `-v` and `--version` options for the Busy Octopus CLI.
+
+### Changed
+
+- The minimum supported VS Code version is now 1.137.
+
 ## 0.1.1
 
 ### Added
