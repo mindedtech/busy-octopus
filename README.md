@@ -6,21 +6,19 @@ VS Code extension that notifies you when an agent or workspace needs your attent
 
 ## Installation
 
-Busy Octopus is not published yet. Install Node.js 22 or later and the pnpm version declared in `package.json`, then run:
+Install Node.js 22 or later, then install the CLI:
 
 ```shell
-pnpm install --frozen-lockfile
-pnpm package:vsix
-pnpm add --global .
+npm install --global busy-octopus
 ```
 
 In VS Code:
 
-1. Run **Extensions: Install from VSIX...**.
-2. Select `artifacts/<version>/busy-octopus-<version>.vsix`.
+1. Open the Extensions view.
+2. Search for `mindedtech.busy-octopus` and select **Install**.
 3. Open and trust the workspace that should receive notifications.
 
-Install the CLI in the agent environment. For WSL and Dev Containers, run `pnpm add --global .` inside WSL or the container.
+Install the CLI in the agent environment. For WSL and Dev Containers, run `npm install --global busy-octopus` inside WSL or the container.
 
 ## Agent notifications
 

@@ -17,7 +17,7 @@ Set `AZURE_CLIENT_ID` and `AZURE_TENANT_ID` as variables in the `release` enviro
 
 ## Candidate
 
-1. Set the stable version in `package.json` and add `## <version> - <YYYY-MM-DD>` to `CHANGELOG.md`.
+1. Set the stable version in `package.json` and add `## <version>` to `CHANGELOG.md`.
 2. Run `pnpm verify:release`, merge to `main`, and run **Release candidate** from that commit.
 3. Download the archives, verify `SHA256SUMS`, and test both installations.
 

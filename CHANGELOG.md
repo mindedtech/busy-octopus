@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.0
+
 ### Added
 
 - VS Code notifications for trusted local, WSL, and Dev Container workspaces.
@@ -11,4 +13,4 @@
 - Command completion notifications through `busy-octopus run`.
 - A Node.js notification API and CLI.
 
-Future releases use headings in the form `## <version> - <YYYY-MM-DD>`.
+Future releases use headings in the form `## <version>`.
