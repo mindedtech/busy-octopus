@@ -7,7 +7,7 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { NotifyInput } from "../../../library/notify.js";
-import type { AgentHookAdapter } from "../adapter.js";
+import type { AgentAdapter } from "../adapter.js";
 import { agentNotificationBody } from "../text.js";
 import { configureClaudeCodeHooks } from "./config.js";
 
@@ -171,6 +171,7 @@ export const claudeCodeHookAdapter = {
     configPath: ".claude/settings.json",
     configure: configureClaudeCodeHooks,
   },
+  skillTarget: "claude",
   createNotification,
   reply: "",
-} satisfies AgentHookAdapter;
+} satisfies AgentAdapter;

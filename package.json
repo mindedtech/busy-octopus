@@ -83,6 +83,7 @@
     }
   },
   "files": [
+    ".agents/skills/busy-octopus/SKILL.md",
     "assets/icon.png",
     "dist"
   ],

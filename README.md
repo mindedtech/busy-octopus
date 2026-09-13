@@ -40,6 +40,28 @@ Approve the new hooks:
 
 Run `busy-octopus agent setup --help` for attention notifications and other options.
 
+### Agent skill
+
+The optional Busy Octopus skill lets an agent send direct notifications for requested milestones and actionable blockers. Install it alongside lifecycle hooks:
+
+```shell
+busy-octopus agent setup codex --skill
+busy-octopus agent setup claude-code --skill
+```
+
+Install the skill without changing hooks by choosing one or both project layouts:
+
+```shell
+busy-octopus agent skill --agents
+busy-octopus agent skill --claude
+```
+
+Without a destination flag, `busy-octopus agent skill` prints the `SKILL.md` content to standard output. For other supported agent layouts, use the [skills CLI](https://github.com/vercel-labs/skills):
+
+```shell
+npx skills add mindedtech/busy-octopus --skill busy-octopus
+```
+
 ## Command notifications
 
 Wrap any command:

@@ -3,11 +3,14 @@
  */
 
 export const packageFileList = [
+  ".agents/skills/busy-octopus/SKILL.md",
   "LICENSE",
   "README.md",
   "assets/icon.png",
   "dist/cli/main.js",
   "dist/extension/extension.cjs",
+  "dist/file-system/error.d.ts",
+  "dist/file-system/error.js",
   "dist/library/index.d.ts",
   "dist/library/index.js",
   "dist/library/notify.d.ts",

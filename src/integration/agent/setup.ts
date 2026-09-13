@@ -1,13 +1,15 @@
 /**
- * @file Install Busy Octopus hooks in workspace agent configuration.
+ * @file Install Busy Octopus hooks and skills in workspace agent configuration.
  */
 
-import { randomBytes } from "node:crypto";
-import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { isDeepStrictEqual } from "node:util";
+import { hasFileSystemErrorCode } from "../../file-system/error.js";
+import { readOptionalTextFile, writeTextFile } from "../../file-system/text.js";
 import { resolveWorkspace } from "../../workspace/resolution.js";
-import { type AgentProvider, selectAgentHookAdapter } from "./provider.js";
+import { type AgentProvider, selectAgentAdapter } from "./provider.js";
+import { agentSkillPathMap, installAgentSkill } from "./skill.js";
 
 const MAXIMUM_AGENT_CONFIG_BYTE_COUNT = 1_048_576;
 
@@ -31,34 +33,10 @@ const readConfig = async (
 
     return { input: JSON.parse(text), present: true, text };
   } catch (error: unknown) {
-    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+    if (hasFileSystemErrorCode(error, "ENOENT")) {
       return { input: {}, present: false, text: null };
     }
 
-    throw error;
-  }
-};
-
-const writeConfig = async ({
-  path,
-  text,
-}: {
-  path: string;
-  text: string;
-}): Promise<void> => {
-  const directory = dirname(path);
-  const temporaryPath = join(
-    directory,
-    `.${randomBytes(12).toString("hex")}.tmp`,
-  );
-
-  await mkdir(directory, { recursive: true });
-
-  try {
-    await writeFile(temporaryPath, text, { encoding: "utf8", flag: "wx" });
-    await rename(temporaryPath, path);
-  } catch (error: unknown) {
-    await rm(temporaryPath, { force: true });
     throw error;
   }
 };
@@ -71,40 +49,59 @@ export const setupAgent = async ({
   confirm,
   directory,
   provider,
+  skillText,
 }: {
   enableAttention: boolean;
   confirm: (input: {
     path: string;
     provider: AgentProvider;
+    skillPath: string | null;
   }) => Promise<boolean>;
   directory?: string;
   provider: AgentProvider;
+  skillText: string | null;
 }): Promise<AgentSetupResult> => {
   const { path: workspacePath } = await resolveWorkspace(
     directory === undefined ? {} : { directory },
   );
-  const hookAdapter = selectAgentHookAdapter(provider);
-  const path = join(workspacePath, hookAdapter.hookSetup.configPath);
+  const agentAdapter = selectAgentAdapter(provider);
+  const path = join(workspacePath, agentAdapter.hookSetup.configPath);
   const { input, present, text } = await readConfig(path);
   const newline = text?.includes("\r\n") === true ? "\r\n" : "\n";
-
-  const config = hookAdapter.hookSetup.configure({
+  const config = agentAdapter.hookSetup.configure({
     enableAttention,
     input,
   });
+  const configCurrent = text !== null && isDeepStrictEqual(input, config);
+  const skillPath =
+    skillText === null
+      ? null
+      : join(workspacePath, agentSkillPathMap[agentAdapter.skillTarget]);
+  const skillCurrent =
+    skillPath === null || (await readOptionalTextFile(skillPath)) === skillText;
 
-  if (text !== null && isDeepStrictEqual(input, config)) {
+  if (configCurrent && skillCurrent) {
     return "unchanged";
   }
 
-  if (!(await confirm({ path, provider }))) {
+  if (!(await confirm({ path, provider, skillPath }))) {
     return "cancelled";
   }
 
-  await writeConfig({
-    path,
-    text: `${JSON.stringify(config, null, 2).replaceAll("\n", newline)}${newline}`,
-  });
+  if (!configCurrent) {
+    await writeTextFile({
+      path,
+      text: `${JSON.stringify(config, null, 2).replaceAll("\n", newline)}${newline}`,
+    });
+  }
+
+  if (skillText !== null && !skillCurrent) {
+    await installAgentSkill({
+      directory: workspacePath,
+      target: agentAdapter.skillTarget,
+      text: skillText,
+    });
+  }
 
   return present ? "updated" : "configured";
 };

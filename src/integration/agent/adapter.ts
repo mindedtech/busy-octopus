@@ -1,14 +1,15 @@
 /**
- * @file Contract for provider-specific agent hook conversion and setup.
+ * @file Provider-specific agent notification integration contract.
  */
 
 import type { JSONType } from "zod";
 import type { NotifyInput } from "../../library/notify.js";
+import type { AgentSkillTarget } from "./skill.js";
 
 /**
- * Provider-specific conversion and configuration of agent hooks.
+ * Provider-specific agent notification integration.
  */
-export type AgentHookAdapter = {
+export type AgentAdapter = {
   /**
    * Hooks installed for this provider.
    */
@@ -26,6 +27,11 @@ export type AgentHookAdapter = {
       input: unknown;
     }) => JSONType;
   };
+
+  /**
+   * Project skill layout used by the provider.
+   */
+  skillTarget: AgentSkillTarget;
 
   /**
    * Convert one provider payload into generic notification input.

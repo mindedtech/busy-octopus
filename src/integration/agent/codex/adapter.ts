@@ -7,7 +7,7 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { NotifyInput } from "../../../library/notify.js";
-import type { AgentHookAdapter } from "../adapter.js";
+import type { AgentAdapter } from "../adapter.js";
 import { agentNotificationBody } from "../text.js";
 import { configureCodexHooks } from "./config.js";
 
@@ -100,6 +100,7 @@ export const codexHookAdapter = {
     configPath: ".codex/hooks.json",
     configure: configureCodexHooks,
   },
+  skillTarget: "agents",
   createNotification,
   reply: "{}\n",
-} satisfies AgentHookAdapter;
+} satisfies AgentAdapter;
