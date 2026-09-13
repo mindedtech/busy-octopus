@@ -4,7 +4,7 @@
 
 import type { NotifyInput, NotifyResult } from "../../library/notify.js";
 import { AgentHookJson } from "./input.js";
-import { type AgentProvider, selectAgentHookAdapter } from "./provider.js";
+import { type AgentProvider, selectAgentAdapter } from "./provider.js";
 
 /**
  * Publish one agent hook notification while preserving fail-open behavior.
@@ -20,7 +20,7 @@ export const runAgentHook = async ({
   readInput: () => Promise<string>;
   warn: () => void;
 }): Promise<string> => {
-  const hookAdapter = selectAgentHookAdapter(provider);
+  const hookAdapter = selectAgentAdapter(provider);
 
   try {
     const notification = hookAdapter.createNotification(

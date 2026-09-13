@@ -5,7 +5,7 @@
  */
 
 import { z } from "zod";
-import type { AgentHookAdapter } from "../adapter.js";
+import type { AgentAdapter } from "../adapter.js";
 import type { CodexHook } from "./adapter.js";
 
 const command = "busy-octopus agent hook codex";
@@ -136,17 +136,19 @@ const addHook = ({
 /**
  * Apply Busy Octopus hooks to a Codex configuration.
  */
-export const configureCodexHooks: AgentHookAdapter["hookSetup"]["configure"] =
-  ({ enableAttention, input }) => {
-    const config = CodexConfig.parse(input);
-    let hookMap = removeHook(config.hooks ?? {});
+export const configureCodexHooks: AgentAdapter["hookSetup"]["configure"] = ({
+  enableAttention,
+  input,
+}) => {
+  const config = CodexConfig.parse(input);
+  let hookMap = removeHook(config.hooks ?? {});
 
-    for (const hook of [
-      ...hookList,
-      ...(enableAttention ? attentionHookList : []),
-    ]) {
-      hookMap = addHook({ hook, hookMap });
-    }
+  for (const hook of [
+    ...hookList,
+    ...(enableAttention ? attentionHookList : []),
+  ]) {
+    hookMap = addHook({ hook, hookMap });
+  }
 
-    return { ...config, hooks: hookMap };
-  };
+  return { ...config, hooks: hookMap };
+};

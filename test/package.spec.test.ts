@@ -244,6 +244,35 @@ it("verifies the packed library and CLI", { timeout: 30_000 }, async () => {
       "cli",
       "main.js",
     );
+    const skillText = await readFile(
+      join(
+        repositoryDirectory,
+        ".agents",
+        "skills",
+        "busy-octopus",
+        "SKILL.md",
+      ),
+      "utf8",
+    );
+    const skillResult = spawnSync(
+      process.execPath,
+      [cliPath, "agent", "skill"],
+      {
+        cwd: fixtureDirectory,
+        encoding: "utf8",
+        maxBuffer: MAXIMUM_PROCESS_OUTPUT_BYTE_COUNT,
+        timeout: 5_000,
+        env: runtimeEnvironment,
+        windowsHide: true,
+      },
+    );
+
+    expect(skillResult.error).toBeUndefined();
+    expect(skillResult.status).toBe(0);
+    expect(skillResult.signal).toBeNull();
+    expect(skillResult.stdout).toBe(skillText);
+    expect(skillResult.stderr).toBe("");
+
     const commandResult = spawnSync(
       process.execPath,
       [
@@ -367,6 +396,7 @@ it("verifies the packed library and CLI", { timeout: 30_000 }, async () => {
           "agent",
           "setup",
           "codex",
+          "--skill",
           "--directory",
           workspaceDirectory,
           "--yes",
@@ -375,6 +405,18 @@ it("verifies the packed library and CLI", { timeout: 30_000 }, async () => {
         environment: runtimeEnvironment,
       }),
     ).resolves.toBe("configured\n");
+    await expect(
+      readFile(
+        join(
+          workspaceDirectory,
+          ".agents",
+          "skills",
+          "busy-octopus",
+          "SKILL.md",
+        ),
+        "utf8",
+      ),
+    ).resolves.toBe(skillText);
     expect(
       JSON.parse(
         await readFile(

@@ -35,6 +35,7 @@ describe("setupAgent", () => {
     await expect(
       setupAgent({
         enableAttention: false,
+        skillText: null,
         confirm,
         directory: fixtureDirectory,
         provider: "codex",
@@ -46,7 +47,11 @@ describe("setupAgent", () => {
       ".codex",
       "hooks.json",
     );
-    expect(confirm).toHaveBeenCalledWith({ path, provider: "codex" });
+    expect(confirm).toHaveBeenCalledWith({
+      path,
+      provider: "codex",
+      skillPath: null,
+    });
     expect(
       CodexConfig.parse(JSON.parse(await readFile(path, "utf8"))),
     ).toMatchObject({
@@ -66,10 +71,54 @@ describe("setupAgent", () => {
     } satisfies Partial<CodexConfig>);
   });
 
+  it("adds the skill to a current provider configuration", async () => {
+    await setupAgent({
+      enableAttention: false,
+      confirm: () => Promise.resolve(true),
+      directory: fixtureDirectory,
+      provider: "claude-code",
+      skillText: null,
+    });
+    const confirm = vi.fn().mockResolvedValue(true);
+    const skillText = "synthetic skill\n";
+    const { path: workspacePath } = await resolveWorkspace({
+      directory: fixtureDirectory,
+    });
+
+    await expect(
+      setupAgent({
+        enableAttention: false,
+        confirm,
+        directory: fixtureDirectory,
+        provider: "claude-code",
+        skillText,
+      }),
+    ).resolves.toBe("updated");
+
+    expect(confirm).toHaveBeenCalledWith({
+      path: join(workspacePath, ".claude", "settings.json"),
+      provider: "claude-code",
+      skillPath: join(
+        workspacePath,
+        ".claude",
+        "skills",
+        "busy-octopus",
+        "SKILL.md",
+      ),
+    });
+    await expect(
+      readFile(
+        join(workspacePath, ".claude", "skills", "busy-octopus", "SKILL.md"),
+        "utf8",
+      ),
+    ).resolves.toBe(skillText);
+  });
+
   it("does not create configuration after cancellation", async () => {
     await expect(
       setupAgent({
         enableAttention: false,
+        skillText: "synthetic skill\n",
         confirm: () => Promise.resolve(false),
         directory: fixtureDirectory,
         provider: "claude-code",
@@ -87,6 +136,7 @@ describe("setupAgent", () => {
       confirm: () => Promise.resolve(true),
       directory: fixtureDirectory,
       provider: "claude-code",
+      skillText: null,
     });
     const path = join(fixtureDirectory, ".claude", "settings.json");
     const configText = await readFile(path, "utf8");
@@ -95,6 +145,7 @@ describe("setupAgent", () => {
     await expect(
       setupAgent({
         enableAttention: true,
+        skillText: null,
         confirm,
         directory: fixtureDirectory,
         provider: "claude-code",
@@ -125,6 +176,7 @@ describe("setupAgent", () => {
     await expect(
       setupAgent({
         enableAttention: false,
+        skillText: null,
         confirm: () => Promise.resolve(true),
         directory: fixtureDirectory,
         provider: "claude-code",
@@ -171,6 +223,7 @@ describe("setupAgent", () => {
     await expect(
       setupAgent({
         enableAttention: false,
+        skillText: null,
         confirm: () => Promise.resolve(true),
         directory: fixtureDirectory,
         provider: "claude-code",
@@ -192,6 +245,7 @@ describe("setupAgent", () => {
     await expect(
       setupAgent({
         enableAttention: false,
+        skillText: null,
         confirm,
         directory: fixtureDirectory,
         provider: "codex",
@@ -209,6 +263,7 @@ describe("setupAgent", () => {
     await expect(
       setupAgent({
         enableAttention: false,
+        skillText: null,
         confirm: () => Promise.resolve(true),
         directory: fixtureDirectory,
         provider: "codex",

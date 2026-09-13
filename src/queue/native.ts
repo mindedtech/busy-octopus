@@ -18,13 +18,11 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { join } from "node:path";
+import { hasFileSystemErrorCode } from "../file-system/error.js";
 import {
   QueueFileTooLargeError,
   type QueuePublisherFileSystem,
 } from "./file-system.js";
-
-const fileMissing = (error: unknown): boolean =>
-  error instanceof Error && "code" in error && error.code === "ENOENT";
 
 export const nativeQueueFileSystem: QueuePublisherFileSystem = {
   claim: async ({ modificationTime, source, target }) => {
@@ -32,9 +30,8 @@ export const nativeQueueFileSystem: QueuePublisherFileSystem = {
       await copyFile(source, target, COPYFILE_EXCL);
     } catch (error: unknown) {
       if (
-        error instanceof Error &&
-        "code" in error &&
-        (error.code === "ENOENT" || error.code === "EEXIST")
+        hasFileSystemErrorCode(error, "ENOENT") ||
+        hasFileSystemErrorCode(error, "EEXIST")
       ) {
         return false;
       }
@@ -100,7 +97,7 @@ export const nativeQueueFileSystem: QueuePublisherFileSystem = {
     try {
       return Math.trunc((await lstat(path)).mtimeMs);
     } catch (error: unknown) {
-      if (fileMissing(error)) {
+      if (hasFileSystemErrorCode(error, "ENOENT")) {
         return null;
       }
       throw error;
@@ -111,7 +108,7 @@ export const nativeQueueFileSystem: QueuePublisherFileSystem = {
     try {
       status = await lstat(path);
     } catch (error: unknown) {
-      if (fileMissing(error)) {
+      if (hasFileSystemErrorCode(error, "ENOENT")) {
         return;
       }
       throw error;
@@ -126,9 +123,8 @@ export const nativeQueueFileSystem: QueuePublisherFileSystem = {
       await link(source, target);
     } catch (error: unknown) {
       if (
-        error instanceof Error &&
-        "code" in error &&
-        (error.code === "ENOENT" || error.code === "EEXIST")
+        hasFileSystemErrorCode(error, "ENOENT") ||
+        hasFileSystemErrorCode(error, "EEXIST")
       ) {
         return false;
       }

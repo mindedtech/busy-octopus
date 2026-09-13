@@ -5,7 +5,7 @@
  */
 
 import { z } from "zod";
-import type { AgentHookAdapter } from "../adapter.js";
+import type { AgentAdapter } from "../adapter.js";
 import type { ClaudeCodeHook } from "./adapter.js";
 
 const command = "busy-octopus agent hook claude-code";
@@ -144,7 +144,7 @@ const addHook = ({
 /**
  * Apply Busy Octopus hooks to a Claude Code configuration.
  */
-export const configureClaudeCodeHooks: AgentHookAdapter["hookSetup"]["configure"] =
+export const configureClaudeCodeHooks: AgentAdapter["hookSetup"]["configure"] =
   ({ enableAttention, input }) => {
     const config = ClaudeCodeConfig.parse(input);
     let hookMap = removeHook(config.hooks ?? {});
