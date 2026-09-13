@@ -2,9 +2,11 @@
 
 ## Unreleased
 
+## 0.1.3
+
 ### Added
 
-- An optional agent skill for direct milestone and attention notifications.
+- An optional agent skill for intermediate notifications while work continues.
 
 ## 0.1.2
 

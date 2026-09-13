@@ -42,7 +42,7 @@ Run `busy-octopus agent setup --help` for attention notifications and other opti
 
 ### Agent skill
 
-The optional Busy Octopus skill lets an agent send direct notifications for requested milestones and actionable blockers. Install it alongside lifecycle hooks:
+The optional Busy Octopus skill lets an agent send direct notifications for requested intermediate milestones while work continues. Lifecycle hooks already cover turn completion and attention events, and the skill tells the agent to avoid duplicate alerts. Install it alongside lifecycle hooks:
 
 ```shell
 busy-octopus agent setup codex --skill
