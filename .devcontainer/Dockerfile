@@ -1,8 +1,8 @@
 FROM mcr.microsoft.com/devcontainers/javascript-node:26-bookworm
 
-ARG BUSY_OCTOPUS_VERSION=0.1.1
-ARG CLAUDE_CODE_VERSION=2.1.269
-ARG CODEX_VERSION=0.154.0
+ARG BUSY_OCTOPUS_VERSION=0.1.4
+ARG CLAUDE_CODE_VERSION=2.1.287
+ARG CODEX_VERSION=0.159.3
 
 RUN apt-get update \
   && apt-get install --yes --no-install-recommends \
