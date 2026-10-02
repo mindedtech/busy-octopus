@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.4
+
 ### Fixed
 
 - Claude Code turn notifications no longer fail when Claude Code sends a hook field that Busy Octopus does not know.
