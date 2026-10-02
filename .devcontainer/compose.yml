@@ -10,7 +10,6 @@ services:
       DISABLE_AUTOUPDATER: "1"
       pnpm_config_store_dir: /workspace/.pnpm-store
     init: true
-    pids_limit: 1024
     user: node
     volumes:
       - ..:/workspace:cached
