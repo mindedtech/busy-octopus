@@ -451,7 +451,6 @@ it("verifies the packed library and CLI", { timeout: 30_000 }, async () => {
           cwd: workspaceDirectory,
           hook_event_name: "Stop",
           model: "gpt-synthetic",
-          permission_mode: "default",
           turn_id: "package-turn",
           stop_hook_active: false,
           last_assistant_message: "Synthetic Codex result.",
@@ -508,7 +507,8 @@ it("verifies the packed library and CLI", { timeout: 30_000 }, async () => {
         input: "{",
       }),
     ).toEqual({
-      stderr: "busy-octopus: unable to process the agent hook.\n",
+      stderr:
+        "busy-octopus: unable to process the agent hook: custom at (root).\n",
       stdout: "{}\n",
     });
 

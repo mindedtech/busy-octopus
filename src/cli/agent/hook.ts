@@ -41,8 +41,10 @@ export const agentHookCommand = new Command("hook")
 
           return value;
         },
-        warn: () => {
-          stderr.write("busy-octopus: unable to process the agent hook.\n");
+        warn: (failure) => {
+          stderr.write(
+            `busy-octopus: unable to process the agent hook: ${failure}.\n`,
+          );
         },
       }),
     );

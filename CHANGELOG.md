@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Fixed
+
+- Claude Code turn notifications no longer fail when Claude Code sends a hook field that Busy Octopus does not know.
+
+### Changed
+
+- A failed agent hook now reports the failure type and the hook fields that failed validation.
+
 ## 0.1.3
 
 ### Added

@@ -27,7 +27,7 @@ When one style violation is found, scan every in-scope authored file for the sam
 - Treat values as effectively read-only by default: do not mutate inputs or shared data, and prefer `const`, non-mutating operations, and explicit copies. Do not clutter internal types with `readonly`, `Readonly`, `ReadonlyArray`, or deep-readonly utilities. Use type-level readonly only when compiler enforcement materially defines a public ownership contract.
 - Use `satisfies` when an expression otherwise lacks a target type and narrow inference must be preserved. Omit it when an assignment, return, or function call already enforces the same constraint contextually.
 
-Treat hook input, JSON files, queue entries, extension configuration, and external process results as untrusted. Parse them with strict Zod schemas at the boundary. Do not repeatedly parse trusted values within internal code.
+Treat hook input, JSON files, queue entries, extension configuration, and external process results as untrusted. Parse them with strict Zod schemas at the boundary. Agent hook payloads are the exception: their providers add fields without notice, so parse them with `z.object` to strip unknown fields, and validate only the closed value sets that the conversion reads. Do not repeatedly parse trusted values within internal code.
 
 Use explicit `null` rather than optional properties or parameters for significant values that a caller must consciously omit. Reserve `?` for values whose omission is genuinely part of the upstream contract. Do not annotate type guards in `.filter()` callbacks: let TypeScript infer the narrowing so it stays coupled to the predicate.
 

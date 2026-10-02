@@ -11,31 +11,16 @@ import type { AgentAdapter } from "../adapter.js";
 import { agentNotificationBody } from "../text.js";
 import { configureClaudeCodeHooks } from "./config.js";
 
-const ClaudePermissionMode = z.enum([
-  "default",
-  "plan",
-  "acceptEdits",
-  "auto",
-  "dontAsk",
-  "bypassPermissions",
-]);
-
-const ClaudeEffort = z.strictObject({
-  level: z.enum(["low", "medium", "high", "xhigh", "max"]),
-});
-
 const commonShape = {
   session_id: z.string().min(1).max(512),
   prompt_id: z.uuid().optional(),
   transcript_path: z.string().max(4_096),
   cwd: z.string().min(1).max(4_096),
-  permission_mode: ClaudePermissionMode.optional(),
-  effort: ClaudeEffort.optional(),
   agent_id: z.string().min(1).max(512).optional(),
   agent_type: z.string().min(1).max(256).optional(),
 } satisfies z.ZodRawShape;
 
-const ClaudeStopHook = z.strictObject({
+const ClaudeStopHook = z.object({
   ...commonShape,
   hook_event_name: z.literal("Stop"),
   stop_hook_active: z.boolean(),
@@ -44,27 +29,14 @@ const ClaudeStopHook = z.strictObject({
   session_crons: z.array(z.unknown()).max(1_024).optional(),
 });
 
-const ClaudeFailureHook = z.strictObject({
+const ClaudeFailureHook = z.object({
   ...commonShape,
   hook_event_name: z.literal("StopFailure"),
-  error: z.enum([
-    "rate_limit",
-    "overloaded",
-    "authentication_failed",
-    "oauth_org_not_allowed",
-    "account_on_hold",
-    "billing_error",
-    "invalid_request",
-    "model_not_found",
-    "server_error",
-    "max_output_tokens",
-    "unknown",
-  ]),
   error_details: z.string().max(65_536).optional(),
   last_assistant_message: z.string().max(65_536).optional(),
 });
 
-const ClaudeInputHook = z.strictObject({
+const ClaudeInputHook = z.object({
   ...commonShape,
   hook_event_name: z.literal("PreToolUse"),
   tool_name: z.literal("AskUserQuestion"),
@@ -72,7 +44,7 @@ const ClaudeInputHook = z.strictObject({
   tool_use_id: z.string().min(1).max(512),
 });
 
-const ClaudeNotificationHook = z.strictObject({
+const ClaudeNotificationHook = z.object({
   ...commonShape,
   hook_event_name: z.literal("Notification"),
   message: z.string().max(65_536),

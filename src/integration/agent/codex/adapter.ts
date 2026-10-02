@@ -11,31 +11,22 @@ import type { AgentAdapter } from "../adapter.js";
 import { agentNotificationBody } from "../text.js";
 import { configureCodexHooks } from "./config.js";
 
-const CodexPermissionMode = z.enum([
-  "default",
-  "acceptEdits",
-  "plan",
-  "dontAsk",
-  "bypassPermissions",
-]);
-
 const commonShape = {
   session_id: z.string().min(1).max(512),
   transcript_path: z.string().max(4_096).nullable(),
   cwd: z.string().min(1).max(4_096),
   model: z.string().min(1).max(256),
-  permission_mode: CodexPermissionMode,
   turn_id: z.string().min(1).max(512),
 } satisfies z.ZodRawShape;
 
-const CodexStopHook = z.strictObject({
+const CodexStopHook = z.object({
   ...commonShape,
   hook_event_name: z.literal("Stop"),
   stop_hook_active: z.boolean(),
   last_assistant_message: z.string().max(65_536).nullable(),
 });
 
-const CodexInputHook = z.strictObject({
+const CodexInputHook = z.object({
   ...commonShape,
   hook_event_name: z.literal("PreToolUse"),
   tool_name: z.enum(["request_user_input", "request_user_input_async"]),
