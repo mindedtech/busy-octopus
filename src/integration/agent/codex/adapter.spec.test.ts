@@ -12,7 +12,6 @@ const stopHook = {
   cwd: "/synthetic/workspace",
   hook_event_name: "Stop",
   model: "gpt-synthetic",
-  permission_mode: "default",
   turn_id: "turn-1",
   stop_hook_active: false,
   last_assistant_message: " Work is complete. ",
@@ -40,7 +39,6 @@ describe("codexHookAdapter", () => {
         cwd: "/synthetic/workspace",
         hook_event_name: "PreToolUse",
         model: "gpt-synthetic",
-        permission_mode: "default",
         turn_id: "turn-1",
         tool_name: toolName,
         tool_use_id: "tool-1",
@@ -64,13 +62,14 @@ describe("codexHookAdapter", () => {
     ).toBe("🐙".repeat(1_024));
   });
 
-  it("rejects an unknown field", () => {
-    expect(() =>
+  it("ignores provider fields that the conversion does not read", () => {
+    expect(
       codexHookAdapter.createNotification({
         ...stopHook,
+        permission_mode: "synthetic",
         synthetic: true,
       }),
-    ).toThrow();
+    ).toEqual(codexHookAdapter.createNotification(stopHook));
   });
 
   it("rejects an unsupported event", () => {

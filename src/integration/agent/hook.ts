@@ -2,6 +2,7 @@
  * @file Run agent hooks without changing the upstream agent result.
  */
 
+import { ZodError } from "zod";
 import type { NotifyInput, NotifyResult } from "../../library/notify.js";
 import { AgentHookJson } from "./input.js";
 import { type AgentProvider, selectAgentAdapter } from "./provider.js";
@@ -18,7 +19,7 @@ export const runAgentHook = async ({
   notify: (input: NotifyInput) => Promise<NotifyResult>;
   provider: AgentProvider;
   readInput: () => Promise<string>;
-  warn: () => void;
+  warn: (failure: string) => void;
 }): Promise<string> => {
   const hookAdapter = selectAgentAdapter(provider);
 
@@ -30,8 +31,16 @@ export const runAgentHook = async ({
     if (notification !== null) {
       await notify(notification);
     }
-  } catch {
-    warn();
+  } catch (error) {
+    warn(
+      error instanceof ZodError
+        ? error.issues
+            .map(({ code, path }) => `${code} at ${path.join(".") || "(root)"}`)
+            .join(", ")
+        : error instanceof Error
+          ? error.name
+          : typeof error,
+    );
   }
 
   return hookAdapter.reply;

@@ -21,6 +21,12 @@ Do not share prompts, agent output, hook payloads, queue files, credentials, or 
 - In Claude Code, accept workspace trust for the project configuration.
 - Run the agent from the workspace where the hook file was configured.
 
+## Agent hook runs but no notification appears
+
+- Find the hook error output in the agent transcript or hook log.
+- A line that starts with `busy-octopus: unable to process the agent hook:` names the failure type and the hook fields that failed validation.
+- This line contains no hook content. You can include it in a bug report.
+
 ## VS Code does not consume notifications
 
 - Trust the workspace. Busy Octopus does not consume requests in Restricted Mode.

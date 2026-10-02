@@ -12,7 +12,6 @@ const hook = {
   cwd: "/synthetic/workspace",
   hook_event_name: "Stop",
   model: "gpt-synthetic",
-  permission_mode: "default",
   turn_id: "turn-1",
   stop_hook_active: false,
   last_assistant_message: null,
@@ -42,9 +41,13 @@ describe("runAgentHook", () => {
   });
 
   it.each([
-    ["input read", () => Promise.reject(new Error("Synthetic read failure."))],
-    ["JSON parsing", () => Promise.resolve("{")],
-  ])("fails open after %s failure", async (_domain, readInput) => {
+    [
+      "input read",
+      () => Promise.reject(new Error("Synthetic read failure.")),
+      "Error",
+    ],
+    ["JSON parsing", () => Promise.resolve("{"), "custom at (root)"],
+  ])("fails open after %s failure", async (_domain, readInput, failure) => {
     const notify = vi.fn();
     const warn = vi.fn();
 
@@ -57,7 +60,7 @@ describe("runAgentHook", () => {
       }),
     ).resolves.toBe("{}\n");
     expect(notify).not.toHaveBeenCalled();
-    expect(warn).toHaveBeenCalledOnce();
+    expect(warn).toHaveBeenCalledExactlyOnceWith(failure);
   });
 
   it("fails open after provider validation failure", async () => {
@@ -73,7 +76,9 @@ describe("runAgentHook", () => {
       }),
     ).resolves.toBe("");
     expect(notify).not.toHaveBeenCalled();
-    expect(warn).toHaveBeenCalledOnce();
+    expect(warn).toHaveBeenCalledExactlyOnceWith(
+      "invalid_type at transcript_path, invalid_type at last_assistant_message",
+    );
   });
 
   it("fails open after publication failure", async () => {
@@ -90,6 +95,6 @@ describe("runAgentHook", () => {
         warn,
       }),
     ).resolves.toBe("{}\n");
-    expect(warn).toHaveBeenCalledOnce();
+    expect(warn).toHaveBeenCalledExactlyOnceWith("Error");
   });
 });

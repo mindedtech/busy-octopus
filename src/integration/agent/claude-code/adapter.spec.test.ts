@@ -11,7 +11,6 @@ const stopHook = {
   prompt_id: "123e4567-e89b-42d3-a456-426614174000",
   transcript_path: "/synthetic/transcript.jsonl",
   cwd: "/synthetic/workspace",
-  permission_mode: "default",
   hook_event_name: "Stop",
   stop_hook_active: false,
   last_assistant_message: " Work is complete. ",
@@ -68,7 +67,6 @@ describe("claudeCodeHookAdapter", () => {
         prompt_id: "123e4567-e89b-42d3-a456-426614174000",
         transcript_path: "/synthetic/transcript.jsonl",
         cwd: "/synthetic/workspace",
-        permission_mode: "default",
         hook_event_name: "PreToolUse",
         tool_name: "AskUserQuestion",
         tool_input: { questions: [] },
@@ -108,13 +106,39 @@ describe("claudeCodeHookAdapter", () => {
     } satisfies Partial<NotifyInput>);
   });
 
-  it("rejects provider additions that have not been reviewed", () => {
-    expect(() =>
+  it("converts the Claude Code 2.1.287 completed turn", () => {
+    expect(
+      claudeCodeHookAdapter.createNotification({
+        session_id: "session-1",
+        transcript_path: "/synthetic/transcript.jsonl",
+        cwd: "/synthetic/workspace",
+        scratchpad_dir: "/synthetic/scratchpad",
+        prompt_id: "123e4567-e89b-42d3-a456-426614174000",
+        permission_mode: "default",
+        hook_event_name: "Stop",
+        stop_hook_active: false,
+        last_assistant_message: " Work is complete. ",
+        background_tasks: [],
+        session_crons: [],
+      }),
+    ).toEqual({
+      body: "Work is complete.",
+      directory: "/synthetic/workspace",
+      notificationId: "claude-turn-f1951b22d58de24e00e512f186cffb22",
+      source: { kind: "agent", name: "Claude Code" },
+      title: "Claude Code",
+    } satisfies NotifyInput);
+  });
+
+  it("ignores provider fields that the conversion does not read", () => {
+    expect(
       claudeCodeHookAdapter.createNotification({
         ...stopHook,
+        permission_mode: "synthetic",
+        effort: { level: "synthetic" },
         synthetic: true,
       }),
-    ).toThrow();
+    ).toEqual(claudeCodeHookAdapter.createNotification(stopHook));
   });
 
   it("rejects unsupported notification types", () => {
