@@ -36,13 +36,13 @@ When asked to prepare a pull request locally, write its title followed by its bo
 - **`feat`**: A new feature
 - **`fix`**: A bug fix
 - **`refactor`**: Code refactoring without changing functionality
-- **`chore`**: Maintenance tasks, dependency updates, configuration changes
+- **`chore`**: Maintenance tasks, dependency updates (`chore(deps)`), configuration changes
 - **`test`**: Adding or updating tests
 - **`ci`**: CI/CD configuration changes
 - **`docs`**: Documentation changes
 - **`style`**: Code style changes (formatting, whitespace)
 - **`perf`**: Performance improvements
-- **`build`**: Build system or dependency changes
+- **`build`**: Build system and bundling changes, not dependency updates
 
 ## Scope
 
