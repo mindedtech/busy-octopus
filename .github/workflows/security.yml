@@ -32,7 +32,7 @@ jobs:
         run: pnpm audit --prod --audit-level high
 
       - name: Scan repository history for secrets
-        uses: trufflesecurity/trufflehog@4dd8831c5f12599465d4d45c3c447b4018a34c85 # v3.97.9
+        uses: trufflesecurity/trufflehog@c85580b712841eda4c53bc28fc6ace6100e8c16c # v3.99.4
         with:
           extra_args: --results=verified,unknown
-          version: 3.97.9
+          version: 3.99.4
