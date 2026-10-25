@@ -64,7 +64,10 @@ export const executeVsCodeCli = async ({
       reuseMachineInstall: true,
     },
   );
-  ok(command, "VS Code CLI path is unavailable.");
+  ok(
+    command !== undefined && command.length > 0,
+    "VS Code CLI path is unavailable.",
+  );
 
   return executeTestCommand({
     argumentList: [...cliArgumentList, ...argumentList],

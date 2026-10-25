@@ -3,6 +3,7 @@ name: commit-messages
 description: "Commit message and pull request description format for the Busy Octopus repository. Use when creating git commits, writing or reviewing commit messages, drafting or reviewing pull request descriptions, preparing a PR body, or publishing a pull request. Keywords: git, commit, conventional commits, pull request, PR description, PR body, GitHub, gh."
 allowed-tools: Read, Shell, Grep, Glob
 ---
+
 # Commit and Pull Request Message Guidelines
 
 Commit message conventions for the Busy Octopus repository, following [Conventional Commits](https://www.conventionalcommits.org/).

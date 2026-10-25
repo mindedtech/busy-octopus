@@ -46,9 +46,9 @@ const ownershipRaceCodeSet = new Set([
 /**
  * Provide bounded queue operations through the VS Code filesystem API.
  */
-export class WorkspaceQueueFileSystem<Resource>
-  implements QueueFileSystem<Resource>
-{
+export class WorkspaceQueueFileSystem<
+  Resource,
+> implements QueueFileSystem<Resource> {
   #fileSystem: WorkspaceFileSystem<Resource>;
 
   join: QueueFileSystem<Resource>["join"];

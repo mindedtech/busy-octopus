@@ -5,7 +5,7 @@ description: "TypeScript coding conventions for Busy Octopus. Use when writing, 
 
 # Busy Octopus Coding Style
 
-These rules cover design choices that TypeScript, Biome, and Vitest do not fully express. Let repository configuration own mechanical formatting and lint rules. Read `.agents/skills/code-docs/SKILL.md` when adding or reviewing code documentation.
+These rules cover design choices that TypeScript, Oxlint, Oxfmt, and Vitest do not fully express. Let repository configuration own mechanical formatting and lint rules. Read `.agents/skills/code-docs/SKILL.md` when adding or reviewing code documentation.
 
 Do not insert line breaks solely to enforce a source width. Keep each Markdown paragraph and list item on one source line, and use line breaks in code documentation only when they express semantic structure required by the code documentation conventions.
 
@@ -19,7 +19,7 @@ When one style violation is found, scan every in-scope authored file for the sam
 
 - Never use `any`. Accept uncertain values as `unknown`, narrow them, and use Zod for untrusted runtime input.
 - Avoid type assertions. `as const` is allowed. Any other assertion requires a precise explanation and explicit human approval when a sound refactor, narrowing check, `satisfies`, or runtime schema cannot express the invariant.
-- Do not add suppression comments such as `@ts-ignore`, `@ts-expect-error`, or Biome ignores without explicit approval. Compile-failure tests may use `@ts-expect-error` when TypeScript checks the directive itself.
+- Do not add suppression comments such as `@ts-ignore`, `@ts-expect-error`, Oxlint disable comments, or Oxfmt ignore comments without explicit approval. Compile-failure tests may use `@ts-expect-error` when TypeScript checks the directive itself.
 - Never change runtime behavior merely to silence static analysis.
 - Prefer inference for local values. Type public APIs, parameters, generic constraints, and non-obvious return contracts explicitly.
 - Derive related types with TypeScript utility types instead of duplicating shapes. Give generic parameters descriptive names.

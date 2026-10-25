@@ -18,9 +18,12 @@ const createRuntime = ({
   git?: WorkspaceRuntime["git"];
   platform?: WorkspaceRuntime["platform"];
 } = {}) => {
-  const currentDirectoryOperation = vi.fn(() => currentDirectory);
-  const gitOperation = vi.fn(git);
-  const canonicalizeOperation = vi.fn(canonicalize);
+  const currentDirectoryOperation = vi.fn<WorkspaceRuntime["currentDirectory"]>(
+    () => currentDirectory,
+  );
+  const gitOperation = vi.fn<WorkspaceRuntime["git"]>(git);
+  const canonicalizeOperation =
+    vi.fn<WorkspaceRuntime["canonicalize"]>(canonicalize);
   const runtime: WorkspaceRuntime = {
     canonicalize: canonicalizeOperation,
     currentDirectory: currentDirectoryOperation,

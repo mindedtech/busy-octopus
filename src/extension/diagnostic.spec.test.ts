@@ -3,12 +3,19 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
-import { ExtensionDiagnosticReporter } from "./diagnostic.js";
+import type { window } from "vscode";
+import {
+  type DiagnosticOutput,
+  ExtensionDiagnosticReporter,
+} from "./diagnostic.js";
 
 describe("ExtensionDiagnosticReporter", () => {
   it("reports each fixed code once", () => {
-    const output = { dispose: vi.fn(), warn: vi.fn() };
-    const showErrorMessage = vi.fn();
+    const output = {
+      dispose: vi.fn<DiagnosticOutput["dispose"]>(),
+      warn: vi.fn<DiagnosticOutput["warn"]>(),
+    };
+    const showErrorMessage = vi.fn<(typeof window)["showErrorMessage"]>();
     const diagnosticReporter = new ExtensionDiagnosticReporter(output, {
       showErrorMessage,
     });
@@ -28,8 +35,11 @@ describe("ExtensionDiagnosticReporter", () => {
   });
 
   it("shows configuration errors once", () => {
-    const output = { dispose: vi.fn(), warn: vi.fn() };
-    const showErrorMessage = vi.fn();
+    const output = {
+      dispose: vi.fn<DiagnosticOutput["dispose"]>(),
+      warn: vi.fn<DiagnosticOutput["warn"]>(),
+    };
+    const showErrorMessage = vi.fn<(typeof window)["showErrorMessage"]>();
     const diagnosticReporter = new ExtensionDiagnosticReporter(output, {
       showErrorMessage,
     });
@@ -44,10 +54,13 @@ describe("ExtensionDiagnosticReporter", () => {
   });
 
   it("disposes its output", () => {
-    const output = { dispose: vi.fn(), warn: vi.fn() };
+    const output = {
+      dispose: vi.fn<DiagnosticOutput["dispose"]>(),
+      warn: vi.fn<DiagnosticOutput["warn"]>(),
+    };
 
     new ExtensionDiagnosticReporter(output, {
-      showErrorMessage: vi.fn(),
+      showErrorMessage: vi.fn<(typeof window)["showErrorMessage"]>(),
     }).dispose();
 
     expect(output.dispose).toHaveBeenCalledOnce();

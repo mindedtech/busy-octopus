@@ -20,11 +20,11 @@ const readStep = (name: string): string => {
   const block = workflow
     .split(`      - name: ${name}\n`)[1]
     ?.split("\n      - name:")[0];
-  const script = block?.match(/^ {8}run: \|\n((?: {10}.*\n|\n)*)/m)?.[1];
+  const script = block?.match(/^ {8}run: \|\n((?: {10}.*\n|\n)*)/mu)?.[1];
   if (script !== undefined) {
-    return script.replace(/^ {10}/gm, "");
+    return script.replaceAll(/^ {10}/gmu, "");
   }
-  const command = block?.match(/^ {8}run: (.+)$/m)?.[1];
+  const command = block?.match(/^ {8}run: (.+)$/mu)?.[1];
   assert.isDefined(command);
   return command;
 };
@@ -199,11 +199,11 @@ it("orders publishers and keeps downloads bound to the original artifact", () =>
   );
   expect(
     workflow.match(
-      /artifact-ids: \$\{\{ needs.package.outputs.artifact-id \}\}/g,
+      /artifact-ids: \$\{\{ needs.package.outputs.artifact-id \}\}/gu,
     ),
   ).toHaveLength(3);
   expect(workflow).toMatch(
-    /artifact-id: \$\{\{ steps.artifact.outputs.artifact-id \}\}/,
+    /artifact-id: \$\{\{ steps.artifact.outputs.artifact-id \}\}/u,
   );
   expect(workflow.indexOf("name: Confirm npm publication")).toBeLessThan(
     workflow.indexOf("name: Publish VS Code extension"),
@@ -238,7 +238,7 @@ describe.skipIf(process.platform !== "linux")("registry confirmation", () => {
   it("rejects a conflicting npm archive immediately", async () => {
     const fixture = await createFixture({ response: "sha512-other" });
     await expect(fixture.run("Confirm npm publication")).rejects.toThrow(
-      "does not match the approved archive",
+      /^::error::The npm version does not match the approved archive\./mu,
     );
     expect(await fixture.count()).toBe(1);
   });
@@ -246,7 +246,7 @@ describe.skipIf(process.platform !== "linux")("registry confirmation", () => {
   it("stops after six unavailable npm responses", async () => {
     const fixture = await createFixture({ response: null, failureCount: 10 });
     await expect(fixture.run("Confirm npm publication")).rejects.toThrow(
-      "Cannot confirm npm publication",
+      /^::error::Cannot confirm npm publication\./mu,
     );
     expect(await fixture.count()).toBe(6);
   });
@@ -256,7 +256,7 @@ describe.skipIf(process.platform !== "linux")("registry confirmation", () => {
     async (response) => {
       const fixture = await createFixture({ response });
       await expect(fixture.run("Confirm npm publication")).rejects.toThrow(
-        "Cannot confirm npm publication",
+        /^::error::Cannot confirm npm publication\./mu,
       );
     },
   );
@@ -295,7 +295,9 @@ describe.skipIf(process.platform !== "linux")("registry confirmation", () => {
       const fixture = await createFixture({ response });
       await expect(
         fixture.run("Confirm Marketplace publication"),
-      ).rejects.toThrow("Marketplace version is not visible");
+      ).rejects.toThrow(
+        /^::error::The Marketplace version is not visible yet\./mu,
+      );
       expect(await fixture.count()).toBe(61);
     },
   );
@@ -336,7 +338,7 @@ describe.skipIf(process.platform !== "linux")("publication recovery", () => {
           directory: process.cwd(),
           environment: { RELEASE_ENABLED: value },
         }),
-      ).rejects.toThrow();
+      ).rejects.toMatchObject({ code: 1 });
     },
   );
 
@@ -362,7 +364,9 @@ describe.skipIf(process.platform !== "linux")("publication recovery", () => {
       httpStatus: 404,
       uploadFailure: true,
     });
-    await expect(fixture.run("Publish npm package")).rejects.toThrow();
+    await expect(fixture.run("Publish npm package")).rejects.toMatchObject({
+      code: 1,
+    });
     await expect(fixture.run("Publish npm package")).resolves.toContain(
       "already exists",
     );
@@ -376,7 +380,7 @@ describe.skipIf(process.platform !== "linux")("publication recovery", () => {
   ])("rejects conflicting or malformed npm metadata %j", async (response) => {
     const fixture = await createFixture({ response });
     await expect(fixture.run("Publish npm package")).rejects.toThrow(
-      "does not match",
+      /^::error::The existing npm version does not match the approved archive\./mu,
     );
     expect(await fixture.uploadCount()).toBe(0);
   });
@@ -386,7 +390,7 @@ describe.skipIf(process.platform !== "linux")("publication recovery", () => {
     async (httpStatus) => {
       const fixture = await createFixture({ response: {}, httpStatus });
       await expect(fixture.run("Publish npm package")).rejects.toThrow(
-        "Cannot determine",
+        /^::error::Cannot determine npm publication state\./mu,
       );
       expect(await fixture.uploadCount()).toBe(0);
     },
@@ -394,7 +398,9 @@ describe.skipIf(process.platform !== "linux")("publication recovery", () => {
 
   it("does not publish when npm state cannot be fetched", async () => {
     const fixture = await createFixture({ response: {}, failureCount: 1 });
-    await expect(fixture.run("Publish npm package")).rejects.toThrow();
+    await expect(fixture.run("Publish npm package")).rejects.toMatchObject({
+      code: 1,
+    });
     expect(await fixture.uploadCount()).toBe(0);
   });
 
@@ -419,28 +425,46 @@ describe.skipIf(process.platform !== "linux")("publication recovery", () => {
   });
 
   it.each([
-    "Check existing Marketplace version",
-    "Confirm Marketplace publication",
-  ])("rejects conflicting Marketplace bytes during %s", async (name) => {
-    const fixture = await createFixture({
-      response: marketplaceResponse(version),
-      downloadArchive: "conflicting archive",
-    });
-    await expect(fixture.run(name)).rejects.toThrow("does not match");
-    expect(await fixture.output()).toBe("");
-  });
+    [
+      "Check existing Marketplace version",
+      /^::error::The existing Marketplace version does not match the approved archive\./mu,
+    ],
+    [
+      "Confirm Marketplace publication",
+      /^::error::The Marketplace download does not match the approved archive\./mu,
+    ],
+  ])(
+    "rejects conflicting Marketplace bytes during %s",
+    async (name, message) => {
+      const fixture = await createFixture({
+        response: marketplaceResponse(version),
+        downloadArchive: "conflicting archive",
+      });
+      await expect(fixture.run(name)).rejects.toThrow(message);
+      expect(await fixture.output()).toBe("");
+    },
+  );
 
   it.each([
-    "Check existing Marketplace version",
-    "Confirm Marketplace publication",
-  ])("rejects unavailable Marketplace downloads during %s", async (name) => {
-    const fixture = await createFixture({
-      response: marketplaceResponse(version),
-      downloadFailure: true,
-    });
-    await expect(fixture.run(name)).rejects.toThrow();
-    expect(await fixture.output()).toBe("");
-  });
+    [
+      "Check existing Marketplace version",
+      /^::error::The Marketplace version already exists but cannot be downloaded\./mu,
+    ],
+    [
+      "Confirm Marketplace publication",
+      /^::error::The Marketplace version is not visible yet\./mu,
+    ],
+  ])(
+    "rejects unavailable Marketplace downloads during %s",
+    async (name, message) => {
+      const fixture = await createFixture({
+        response: marketplaceResponse(version),
+        downloadFailure: true,
+      });
+      await expect(fixture.run(name)).rejects.toThrow(message);
+      expect(await fixture.output()).toBe("");
+    },
+  );
 
   it.each([{}, { results: null }])(
     "does not upload on malformed Marketplace lookup %j",
@@ -448,7 +472,7 @@ describe.skipIf(process.platform !== "linux")("publication recovery", () => {
       const fixture = await createFixture({ response });
       await expect(
         fixture.run("Check existing Marketplace version"),
-      ).rejects.toThrow();
+      ).rejects.toThrow("Cannot iterate over null");
       expect(await fixture.output()).toBe("");
     },
   );

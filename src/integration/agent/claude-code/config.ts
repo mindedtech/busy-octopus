@@ -88,7 +88,7 @@ const removeHook = (
   Object.fromEntries(
     Object.entries(hookMap).flatMap(([event, groupList]) => {
       const remainingGroupList = groupList
-        .map(removeHandler)
+        .map((group) => removeHandler(group))
         .filter((group) => group !== null);
 
       return remainingGroupList.length === 0

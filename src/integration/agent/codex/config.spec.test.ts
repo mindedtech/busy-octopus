@@ -3,6 +3,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { ZodError } from "zod";
 import { type CodexConfig, configureCodexHooks } from "./config.js";
 
 describe("configureCodexHooks", () => {
@@ -139,6 +140,6 @@ describe("configureCodexHooks", () => {
         enableAttention: false,
         input: { hooks: { Stop: {} } },
       }),
-    ).toThrow();
+    ).toThrow(ZodError);
   });
 });

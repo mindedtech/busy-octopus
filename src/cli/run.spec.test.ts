@@ -4,7 +4,7 @@
 
 import { basename } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { NotifyInput, notify } from "../library/notify.js";
+import type { notify, NotifyInput } from "../library/notify.js";
 import { MAXIMUM_NOTIFICATION_BODY_CODE_POINT_COUNT } from "../protocol/notification.js";
 import { runTestCli } from "./test.js";
 

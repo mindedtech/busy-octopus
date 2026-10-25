@@ -17,10 +17,14 @@ const hook = {
   last_assistant_message: null,
 } satisfies CodexHook;
 
+type HookRun = Parameters<typeof runAgentHook>[0];
+
 describe("runAgentHook", () => {
   it("publishes provider notification input", async () => {
-    const notify = vi.fn().mockResolvedValue({ notificationId: "request-1" });
-    const warn = vi.fn();
+    const notify = vi
+      .fn<HookRun["notify"]>()
+      .mockResolvedValue({ notificationId: "request-1" });
+    const warn = vi.fn<HookRun["warn"]>();
 
     await expect(
       runAgentHook({
@@ -48,8 +52,8 @@ describe("runAgentHook", () => {
     ],
     ["JSON parsing", () => Promise.resolve("{"), "custom at (root)"],
   ])("fails open after %s failure", async (_domain, readInput, failure) => {
-    const notify = vi.fn();
-    const warn = vi.fn();
+    const notify = vi.fn<HookRun["notify"]>();
+    const warn = vi.fn<HookRun["warn"]>();
 
     await expect(
       runAgentHook({
@@ -64,8 +68,8 @@ describe("runAgentHook", () => {
   });
 
   it("fails open after provider validation failure", async () => {
-    const notify = vi.fn();
-    const warn = vi.fn();
+    const notify = vi.fn<HookRun["notify"]>();
+    const warn = vi.fn<HookRun["warn"]>();
 
     await expect(
       runAgentHook({
@@ -83,9 +87,9 @@ describe("runAgentHook", () => {
 
   it("fails open after publication failure", async () => {
     const notify = vi
-      .fn()
+      .fn<HookRun["notify"]>()
       .mockRejectedValue(new Error("Synthetic publication failure."));
-    const warn = vi.fn();
+    const warn = vi.fn<HookRun["warn"]>();
 
     await expect(
       runAgentHook({

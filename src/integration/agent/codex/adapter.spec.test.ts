@@ -3,6 +3,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { ZodError } from "zod";
 import type { NotifyInput } from "../../../library/notify.js";
 import { type CodexHook, codexHookAdapter } from "./adapter.js";
 
@@ -78,7 +79,7 @@ describe("codexHookAdapter", () => {
         ...stopHook,
         hook_event_name: "SessionStart",
       }),
-    ).toThrow();
+    ).toThrow(ZodError);
   });
 
   it("returns neutral Codex output", () => {

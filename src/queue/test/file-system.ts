@@ -60,7 +60,8 @@ export class MemoryQueueFileSystem implements QueuePublisherFileSystem {
     _path,
   ) => {};
 
-  join: QueuePublisherFileSystem["join"] = posix.join;
+  join: QueuePublisherFileSystem["join"] = (directory, name) =>
+    posix.join(directory, name);
 
   list: QueuePublisherFileSystem["list"] = async (path, maximumEntryCount) => {
     this.#onList?.(maximumEntryCount);

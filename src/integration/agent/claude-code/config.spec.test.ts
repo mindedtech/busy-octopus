@@ -3,6 +3,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { ZodError } from "zod";
 import { type ClaudeCodeConfig, configureClaudeCodeHooks } from "./config.js";
 
 describe("configureClaudeCodeHooks", () => {
@@ -173,6 +174,6 @@ describe("configureClaudeCodeHooks", () => {
         enableAttention: false,
         input: { hooks: { Stop: {} } },
       }),
-    ).toThrow();
+    ).toThrow(ZodError);
   });
 });

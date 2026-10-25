@@ -5,20 +5,20 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const { execFileMock } = vi.hoisted(() => ({
-  execFileMock: vi.fn(
+  execFileMock: vi.fn<
     (
-      _file: string,
-      _argumentList: string[],
-      _options: object,
+      file: string,
+      argumentList: string[],
+      options: object,
       callback: (
         error: Error | null,
         output: string,
         errorOutput: string,
       ) => void,
-    ) => {
-      callback(null, "feature/example\n", "");
-    },
-  ),
+    ) => void
+  >((_file, _argumentList, _options, callback) => {
+    callback(null, "feature/example\n", "");
+  }),
 }));
 
 vi.mock("node:child_process", () => ({ execFile: execFileMock }));

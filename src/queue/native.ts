@@ -43,7 +43,7 @@ export const nativeQueueFileSystem: QueuePublisherFileSystem = {
       await utimes(target, time, time);
       await rm(source, { force: true });
     } catch (error: unknown) {
-      await rm(target, { force: true }).catch(() => undefined);
+      await rm(target, { force: true }).catch(() => {});
       throw error;
     }
     return true;
@@ -130,7 +130,7 @@ export const nativeQueueFileSystem: QueuePublisherFileSystem = {
       }
       throw error;
     }
-    await rm(source, { force: true }).catch(() => undefined);
+    await rm(source, { force: true }).catch(() => {});
     return true;
   },
   writeExclusive: async (path, byteList) => {

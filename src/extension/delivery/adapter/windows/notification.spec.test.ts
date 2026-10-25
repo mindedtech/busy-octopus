@@ -56,7 +56,7 @@ describe("WindowsNotificationAdapter", () => {
     const adapter = new WindowsNotificationAdapter({
       appName: "Visual Studio Code",
       scriptPath: "synthetic-script",
-      showNotification: vi.fn(),
+      showNotification: vi.fn<typeof showWindowsNotification>(),
       uriScheme: "vscode",
     });
 
@@ -121,7 +121,7 @@ describe("WindowsNotificationAdapter", () => {
   });
 
   it("rejects an unsupported workspace before invoking PowerShell", async () => {
-    const showNotification = vi.fn();
+    const showNotification = vi.fn<typeof showWindowsNotification>();
     const adapter = new WindowsNotificationAdapter({
       appName: "Visual Studio Code",
       scriptPath: "synthetic-script",

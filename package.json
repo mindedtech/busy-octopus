@@ -1,34 +1,90 @@
 {
   "name": "busy-octopus",
   "displayName": "Busy Octopus",
-  "icon": "assets/icon.png",
-  "description": "VS Code extension to notify you when an agent or workspace needs attention",
   "version": "0.1.4",
-  "publisher": "mindedtech",
-  "license": "MIT",
-  "type": "module",
-  "engines": {
-    "node": ">=22",
-    "vscode": "^1.137.0"
-  },
-  "main": "./dist/extension/extension.cjs",
-  "activationEvents": [
-    "onStartupFinished"
-  ],
-  "extensionKind": [
-    "ui"
-  ],
-  "capabilities": {
-    "untrustedWorkspaces": {
-      "supported": false
-    },
-    "virtualWorkspaces": {
-      "supported": false
-    }
-  },
+  "description": "VS Code extension to notify you when an agent or workspace needs attention",
   "categories": [
     "Other"
   ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mindedtech/busy-octopus.git"
+  },
+  "publisher": "mindedtech",
+  "bin": {
+    "busy-octopus": "./dist/cli/main.js"
+  },
+  "files": [
+    ".agents/skills/busy-octopus/SKILL.md",
+    "assets/icon.png",
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/extension/extension.cjs",
+  "exports": {
+    ".": {
+      "types": "./dist/library/index.d.ts",
+      "import": "./dist/library/index.js"
+    }
+  },
+  "scripts": {
+    "build": "pnpm clean && pnpm build:lib && pnpm build:cli && pnpm build:extension",
+    "build:lib": "tsc --project tsconfig.build.json",
+    "build:cli": "esbuild src/cli/main.ts --bundle --format=esm --packages=external --platform=node --target=node22 --outfile=dist/cli/main.js",
+    "build:extension": "esbuild src/extension/extension.ts --bundle --external:vscode --format=cjs --minify --platform=node --target=node22 --outfile=dist/extension/extension.cjs",
+    "build:test:extension": "esbuild \"src/extension/**/*.e2e.test.ts\" --bundle --external:vscode --format=cjs --out-extension:.js=.cjs --outbase=src/extension --outdir=dist/test/extension --platform=node --sourcemap --target=node22",
+    "check": "pnpm check:format && pnpm check:lint && pnpm check:types && pnpm check:knip",
+    "check:fix": "oxfmt && oxlint --fix && oxfmt",
+    "check:format": "oxfmt --check",
+    "check:knip": "knip",
+    "check:lint": "oxlint --deny-warnings",
+    "check:types": "tsc --project tsconfig.json && tsc --project src/extension/tsconfig.json",
+    "clean": "node --experimental-strip-types scripts/build/clean.ts",
+    "cli": "pnpm build && node dist/cli/main.js",
+    "format": "oxfmt",
+    "measure:cli:cold-start": "pnpm build && node --experimental-strip-types scripts/measure/cli/cold-start.ts",
+    "package:npm": "pnpm build && node --experimental-strip-types scripts/package/npm.ts",
+    "package:release": "pnpm build && node --experimental-strip-types scripts/package/npm.ts && node --experimental-strip-types scripts/package/extension.ts && node --experimental-strip-types scripts/package/checksum.ts",
+    "package:vsix": "pnpm build && node --experimental-strip-types scripts/package/extension.ts",
+    "release:preflight": "node --experimental-strip-types scripts/release/preflight.ts",
+    "test": "vitest run src",
+    "test:extension": "pnpm build && pnpm build:test:extension && node --experimental-strip-types scripts/test/extension.ts",
+    "test:package": "vitest run test/package.spec.test.ts",
+    "test:release:controls": "vitest run test/release/controls",
+    "test:release:artifacts": "vitest run test/release/artifact.spec.test.ts",
+    "test:release": "node --experimental-strip-types scripts/test/release.ts",
+    "test:vsix": "pnpm package:vsix && vitest run test/vsix.spec.test.ts",
+    "test:watch": "vitest src",
+    "verify": "pnpm install --frozen-lockfile && pnpm check && pnpm test && pnpm test:release:controls && pnpm test:package && pnpm test:vsix && pnpm test:extension && pnpm audit --prod --audit-level high",
+    "verify:release": "pnpm verify && pnpm package:release && pnpm test:release"
+  },
+  "dependencies": {
+    "@commander-js/extra-typings": "15.0.0",
+    "commander": "15.0.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/chai": "5.2.3",
+    "@types/mocha": "10.0.10",
+    "@types/node": "22.20.5",
+    "@types/sinon": "22.0.0",
+    "@types/vscode": "1.137.0",
+    "@vscode/test-cli": "0.0.15",
+    "@vscode/test-electron": "3.1.0",
+    "@vscode/vsce": "3.9.2",
+    "chai": "6.3.0",
+    "esbuild": "0.28.2",
+    "fflate": "0.8.3",
+    "knip": "6.42.1",
+    "oxfmt": "0.74.0",
+    "oxlint": "1.89.0",
+    "oxlint-tsgolint": "7.0.2005",
+    "sinon": "22.1.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
+  },
   "contributes": {
     "commands": [
       {
@@ -73,77 +129,24 @@
       }
     }
   },
-  "bin": {
-    "busy-octopus": "./dist/cli/main.js"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/library/index.d.ts",
-      "import": "./dist/library/index.js"
-    }
-  },
-  "files": [
-    ".agents/skills/busy-octopus/SKILL.md",
-    "assets/icon.png",
-    "dist"
+  "activationEvents": [
+    "onStartupFinished"
   ],
+  "extensionKind": [
+    "ui"
+  ],
+  "icon": "assets/icon.png",
+  "engines": {
+    "node": ">=22",
+    "vscode": "^1.137.0"
+  },
   "packageManager": "pnpm@12.15.0",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mindedtech/busy-octopus.git"
-  },
-  "scripts": {
-    "build": "pnpm clean && pnpm build:lib && pnpm build:cli && pnpm build:extension",
-    "build:lib": "tsc --project tsconfig.build.json",
-    "build:cli": "esbuild src/cli/main.ts --bundle --format=esm --packages=external --platform=node --target=node22 --outfile=dist/cli/main.js",
-    "build:extension": "esbuild src/extension/extension.ts --bundle --external:vscode --format=cjs --minify --platform=node --target=node22 --outfile=dist/extension/extension.cjs",
-    "build:test:extension": "esbuild \"src/extension/**/*.e2e.test.ts\" --bundle --external:vscode --format=cjs --out-extension:.js=.cjs --outbase=src/extension --outdir=dist/test/extension --platform=node --sourcemap --target=node22",
-    "check": "pnpm check:biome && pnpm check:types && pnpm check:knip",
-    "check:biome": "biome check .",
-    "check:fix": "biome check --write .",
-    "check:knip": "knip",
-    "check:types": "tsc --project tsconfig.json && tsc --project tsconfig.e2e.json",
-    "clean": "node --experimental-strip-types scripts/build/clean.ts",
-    "cli": "pnpm build && node dist/cli/main.js",
-    "format": "biome format --write .",
-    "measure:cli:cold-start": "pnpm build && node --experimental-strip-types scripts/measure/cli/cold-start.ts",
-    "package:npm": "pnpm build && node --experimental-strip-types scripts/package/npm.ts",
-    "package:release": "pnpm build && node --experimental-strip-types scripts/package/npm.ts && node --experimental-strip-types scripts/package/extension.ts && node --experimental-strip-types scripts/package/checksum.ts",
-    "package:vsix": "pnpm build && node --experimental-strip-types scripts/package/extension.ts",
-    "release:preflight": "node --experimental-strip-types scripts/release/preflight.ts",
-    "test": "vitest run src",
-    "test:extension": "pnpm build && pnpm build:test:extension && node --experimental-strip-types scripts/test/extension.ts",
-    "test:package": "vitest run test/package.spec.test.ts",
-    "test:release:controls": "vitest run test/release/controls",
-    "test:release:artifacts": "vitest run test/release/artifact.spec.test.ts",
-    "test:release": "node --experimental-strip-types scripts/test/release.ts",
-    "test:vsix": "pnpm package:vsix && vitest run test/vsix.spec.test.ts",
-    "test:watch": "vitest src",
-    "verify": "pnpm install --frozen-lockfile && pnpm check && pnpm test && pnpm test:release:controls && pnpm test:package && pnpm test:vsix && pnpm test:extension && pnpm audit --prod --audit-level high",
-    "verify:release": "pnpm verify && pnpm package:release && pnpm test:release"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.5.15",
-    "@types/chai": "5.2.3",
-    "@types/mocha": "10.0.10",
-    "@types/node": "22.20.5",
-    "@types/sinon": "22.0.0",
-    "@types/vscode": "1.137.0",
-    "@vscode/test-cli": "0.0.15",
-    "@vscode/test-electron": "3.1.0",
-    "@vscode/vsce": "3.9.2",
-    "chai": "6.3.0",
-    "esbuild": "0.28.2",
-    "fflate": "0.8.3",
-    "knip": "6.42.1",
-    "sinon": "22.1.0",
-    "typescript": "7.0.2",
-    "vite": "8.3.5",
-    "vitest": "5.0.5"
-  },
-  "dependencies": {
-    "@commander-js/extra-typings": "15.0.0",
-    "commander": "15.0.0",
-    "zod": "4.6.7"
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false
+    },
+    "virtualWorkspaces": {
+      "supported": false
+    }
   }
 }

@@ -60,13 +60,13 @@ export class ExtensionDiagnosticReporter implements Disposable {
         void this.#window.showErrorMessage(
           "Busy Octopus could not read its notification settings.",
         );
-        return;
+        break;
       case "claim-release-error":
       case "delivery-adapter-error":
       case "queue-access-error":
       case "request-consumer-error":
       case "taskbar-process-error":
-        return;
+        break;
     }
   };
 }

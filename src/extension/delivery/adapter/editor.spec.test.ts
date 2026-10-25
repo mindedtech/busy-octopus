@@ -3,6 +3,7 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
+import type { window } from "vscode";
 import { createNotificationRequest } from "../../../protocol/notification.js";
 import type { NotificationDeliveryTarget } from "../adapter.js";
 import type { NotificationDeliveryConfig } from "../config.js";
@@ -39,7 +40,8 @@ const config = {
 
 describe("EditorNotificationAdapter", () => {
   it("does not allow editor notifications by default", () => {
-    const showInformationMessage = vi.fn();
+    const showInformationMessage =
+      vi.fn<(typeof window)["showInformationMessage"]>();
     const adapter = new EditorNotificationAdapter({
       showInformationMessage,
     });
@@ -49,7 +51,8 @@ describe("EditorNotificationAdapter", () => {
 
   it("allows enabled editor notifications", () => {
     const adapter = new EditorNotificationAdapter({
-      showInformationMessage: vi.fn(),
+      showInformationMessage:
+        vi.fn<(typeof window)["showInformationMessage"]>(),
     });
 
     expect(
@@ -61,7 +64,8 @@ describe("EditorNotificationAdapter", () => {
   });
 
   it("shows notifications", async () => {
-    const showInformationMessage = vi.fn();
+    const showInformationMessage =
+      vi.fn<(typeof window)["showInformationMessage"]>();
     const adapter = new EditorNotificationAdapter({
       showInformationMessage,
     });
@@ -79,7 +83,8 @@ describe("EditorNotificationAdapter", () => {
   });
 
   it("shows only the title when details are absent", async () => {
-    const showInformationMessage = vi.fn();
+    const showInformationMessage =
+      vi.fn<(typeof window)["showInformationMessage"]>();
     const adapter = new EditorNotificationAdapter({ showInformationMessage });
 
     await adapter.deliver({
@@ -93,7 +98,8 @@ describe("EditorNotificationAdapter", () => {
   });
 
   it("does not show a notification after cancellation", async () => {
-    const showInformationMessage = vi.fn();
+    const showInformationMessage =
+      vi.fn<(typeof window)["showInformationMessage"]>();
     const abortController = new AbortController();
     const adapter = new EditorNotificationAdapter({
       showInformationMessage,
@@ -112,7 +118,8 @@ describe("EditorNotificationAdapter", () => {
   });
 
   it("delivers a notification without applying routine policy", async () => {
-    const showInformationMessage = vi.fn();
+    const showInformationMessage =
+      vi.fn<(typeof window)["showInformationMessage"]>();
     const adapter = new EditorNotificationAdapter({
       showInformationMessage,
     });
