@@ -20,12 +20,16 @@ const commonShape = {
   agent_type: z.string().min(1).max(256).optional(),
 } satisfies z.ZodRawShape;
 
+const ClaudeBackgroundTask = z.object({
+  type: z.string().max(256),
+});
+
 const ClaudeStopHook = z.object({
   ...commonShape,
   hook_event_name: z.literal("Stop"),
   stop_hook_active: z.boolean(),
   last_assistant_message: z.string().max(65_536).optional(),
-  background_tasks: z.array(z.unknown()).max(1_024).optional(),
+  background_tasks: z.array(ClaudeBackgroundTask).max(1_024).optional(),
   session_crons: z.array(z.unknown()).max(1_024).optional(),
 });
 
@@ -80,11 +84,22 @@ const notificationId = ({
     .digest("hex")
     .slice(0, 32)}`;
 
-const createNotification = (input: unknown): NotifyInput => {
+// Subagents and workflows report back in a later turn; other tasks, like idle teammates, may never end.
+const agentTaskTypeSet = new Set(["subagent", "workflow"]);
+
+const createNotification = (input: unknown): NotifyInput | null => {
   const hook = ClaudeCodeHook.parse(input);
 
   switch (hook.hook_event_name) {
     case "Stop":
+      if (
+        (hook.background_tasks ?? []).some(({ type }) =>
+          agentTaskTypeSet.has(type),
+        )
+      ) {
+        return null;
+      }
+
       return {
         body: agentNotificationBody(hook.last_assistant_message ?? null),
         directory: hook.cwd,

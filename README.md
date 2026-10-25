@@ -107,6 +107,8 @@ Completion notifications are configured by default:
 | Claude Code | `Stop`        | Final response, when available. |
 | Claude Code | `StopFailure` | Turn stopped with an error.     |
 
+For Claude Code, Busy Octopus skips the `Stop` notification while a background subagent or workflow is still running, because its result starts another turn.
+
 The `--enable-attention` setup option adds:
 
 | Provider    | Event                                                               | Message            |

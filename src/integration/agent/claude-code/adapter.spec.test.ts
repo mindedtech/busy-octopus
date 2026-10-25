@@ -40,6 +40,71 @@ describe("claudeCodeHookAdapter", () => {
     } satisfies Partial<NotifyInput>);
   });
 
+  it.each(["subagent", "workflow"])(
+    "skips a turn that waits for a %s task",
+    (type) => {
+      expect(
+        claudeCodeHookAdapter.createNotification({
+          ...stopHook,
+          background_tasks: [
+            {
+              id: "task-1",
+              type,
+              status: "running",
+              description: "Synthetic task.",
+            },
+          ],
+        }),
+      ).toBeNull();
+    },
+  );
+
+  it("skips a turn that waits for an agent task among other tasks", () => {
+    expect(
+      claudeCodeHookAdapter.createNotification({
+        ...stopHook,
+        background_tasks: [
+          {
+            id: "task-1",
+            type: "shell",
+            status: "running",
+            description: "Synthetic task.",
+          },
+          {
+            id: "task-2",
+            type: "subagent",
+            status: "pending",
+            description: "Synthetic task.",
+          },
+        ],
+      }),
+    ).toBeNull();
+  });
+
+  it("converts a turn while only open-ended background tasks run", () => {
+    expect(
+      claudeCodeHookAdapter.createNotification({
+        ...stopHook,
+        background_tasks: ["shell", "monitor", "teammate", "cloud session"].map(
+          (type, index) => ({
+            id: `task-${index}`,
+            type,
+            status: "running",
+            description: "Synthetic task.",
+          }),
+        ),
+      }),
+    ).toEqual(claudeCodeHookAdapter.createNotification(stopHook));
+  });
+
+  it("converts a turn without a background task registry", () => {
+    const { background_tasks: _, ...hook } = stopHook;
+
+    expect(claudeCodeHookAdapter.createNotification(hook)).toEqual(
+      claudeCodeHookAdapter.createNotification(stopHook),
+    );
+  });
+
   it("converts a failed turn without exposing error details", () => {
     expect(
       claudeCodeHookAdapter.createNotification({
