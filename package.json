@@ -1,7 +1,7 @@
 {
   "name": "busy-octopus",
   "displayName": "Busy Octopus",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "VS Code extension to notify you when an agent or workspace needs attention",
   "categories": [
     "Other"
