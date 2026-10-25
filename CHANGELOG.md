@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- The VS Code extension icon fits within the Marketplace's 1024 × 1024 pixel limit, which blocked publishing 0.1.5 to the Marketplace.
+
 ## 0.1.5
 
 ### Fixed
