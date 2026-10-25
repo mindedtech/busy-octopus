@@ -4,7 +4,6 @@
 
 import { spawn } from "node:child_process";
 import { env, execPath, platform } from "node:process";
-import { fileURLToPath } from "node:url";
 
 const runCommand = async ({
   argumentList,
@@ -48,7 +47,7 @@ if (
       "--auto-servernum",
       execPath,
       "--experimental-strip-types",
-      fileURLToPath(import.meta.url),
+      import.meta.filename,
     ],
     command: "xvfb-run",
     environment: { ...env, BUSY_OCTOPUS_TEST_DISPLAY: "1" },

@@ -2,14 +2,16 @@
  * @file Verify exact Windows taskbar attention ownership.
  */
 
-import { describe, expect, it, vi } from "vitest";
+import { assert, describe, expect, it, vi } from "vitest";
+import type { Disposable } from "vscode";
 import { EditorWindowHandle } from "../../../windows/bridge.js";
 import type { NotificationDeliveryConfig } from "../../config.js";
 import { WindowsTaskbarAdapter } from "./taskbar.js";
 
-type TaskbarBridge = ConstructorParameters<
+type TaskbarAdapterInput = ConstructorParameters<
   typeof WindowsTaskbarAdapter
->[0]["bridge"];
+>[0];
+type TaskbarBridge = TaskbarAdapterInput["bridge"];
 
 const windowHandle = EditorWindowHandle.parse("987654");
 
@@ -25,7 +27,6 @@ const config = {
 
 const createAdapter = ({ focus = true }: { focus?: boolean } = {}) => {
   let currentFocus = focus;
-  let onFocusChange = (_focus: boolean): void => undefined;
   const bridge = {
     captureWindow: vi.fn<TaskbarBridge["captureWindow"]>().mockResolvedValue({
       status: "success",
@@ -38,16 +39,22 @@ const createAdapter = ({ focus = true }: { focus?: boolean } = {}) => {
       .fn<TaskbarBridge["stopFlash"]>()
       .mockResolvedValue({ status: "success" }),
   } satisfies TaskbarBridge;
-  const dispose = vi.fn();
+  const dispose = vi.fn<Disposable["dispose"]>();
+  const onFocusChange = vi.fn<TaskbarAdapterInput["onFocusChange"]>(() => ({
+    dispose,
+  }));
   const adapter = new WindowsTaskbarAdapter({
     bridge,
-    diagnose: vi.fn(),
-    onFocusChange: (callback) => {
-      onFocusChange = callback;
-      return { dispose };
-    },
+    diagnose: vi.fn<TaskbarAdapterInput["diagnose"]>(),
+    onFocusChange,
     readFocus: () => currentFocus,
   });
+  const [registration] = onFocusChange.mock.calls;
+  assert(
+    registration !== undefined,
+    "Taskbar adapter must register a focus listener.",
+  );
+  const [changeFocus] = registration;
 
   return {
     adapter,
@@ -55,7 +62,7 @@ const createAdapter = ({ focus = true }: { focus?: boolean } = {}) => {
     dispose,
     setFocus: (value: boolean) => {
       currentFocus = value;
-      onFocusChange(value);
+      changeFocus(value);
     },
   };
 };

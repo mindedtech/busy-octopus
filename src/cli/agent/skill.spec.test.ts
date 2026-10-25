@@ -7,9 +7,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runTestCli } from "../test.js";
+import type { loadAgentSkillText } from "./content.js";
 
 const agentSkillText = "# Busy Octopus\n";
-const { loadSkill } = vi.hoisted(() => ({ loadSkill: vi.fn() }));
+const { loadSkill } = vi.hoisted(() => ({
+  loadSkill: vi.fn<typeof loadAgentSkillText>(),
+}));
 
 vi.mock("./content.js", () => ({ loadAgentSkillText: loadSkill }));
 

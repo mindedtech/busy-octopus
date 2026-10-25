@@ -23,11 +23,9 @@ describe("program", () => {
     async (flag) => {
       const result = await runTestCli([flag]);
 
-      expect(result).toEqual({
-        exitCode: 0,
-        stderr: "",
-        stdout: expect.stringMatching(/^\d+\.\d+\.\d+\n$/u),
-      });
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toMatch(/^\d+\.\d+\.\d+\n$/u);
     },
   );
 

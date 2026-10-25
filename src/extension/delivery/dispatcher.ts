@@ -145,15 +145,18 @@ export class NotificationDeliveryDispatcher implements Disposable {
         sourceName,
         ...[label, branch]
           .filter((value) => value !== null)
-          .map(this.#sanitizeText),
+          .map((value) => this.#sanitizeText(value)),
       ].join(" · "),
     };
   };
 
   #sanitizeText = (value: string): string =>
     value
-      .replace(/[\p{Cc}\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]+/gu, " ")
-      .replace(/\s+/gu, " ")
+      .replaceAll(
+        /[\p{Cc}\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]+/gu,
+        " ",
+      )
+      .replaceAll(/\s+/gu, " ")
       .trim();
 
   #send = async ({

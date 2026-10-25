@@ -12,6 +12,8 @@ const alternativeSha = "3".repeat(40);
 const tag = "v1.2.3";
 const repository = "synthetic/project";
 
+type TagVerification = Parameters<typeof verifyReleaseTag>[0];
+
 const createFixture = () => {
   const gitResultMap = new Map<string, string | Error>([
     ["rev-parse HEAD", commit],
@@ -27,25 +29,29 @@ const createFixture = () => {
     object: { sha: commit, type: "commit" },
     verification: { verified: true },
   };
-  const executeGit = vi.fn(async (argumentList: string[]) => {
-    const result = gitResultMap.get(argumentList.join(" "));
-    if (result === undefined) {
-      throw new Error("Unexpected Git operation.");
-    }
-    if (result instanceof Error) {
-      throw result;
-    }
-    return result;
-  });
-  const readGitHubJson = vi.fn(async (path: string) => {
-    if (path === `/repos/${repository}/git/ref/tags/${tag}`) {
-      return reference;
-    }
-    if (path === `/repos/${repository}/git/tags/${tagSha}`) {
-      return signature;
-    }
-    throw new Error("Unexpected GitHub operation.");
-  });
+  const executeGit = vi.fn<TagVerification["executeGit"]>(
+    async (argumentList) => {
+      const result = gitResultMap.get(argumentList.join(" "));
+      if (result === undefined) {
+        throw new Error("Unexpected Git operation.");
+      }
+      if (result instanceof Error) {
+        throw result;
+      }
+      return result;
+    },
+  );
+  const readGitHubJson = vi.fn<TagVerification["readGitHubJson"]>(
+    async (path) => {
+      if (path === `/repos/${repository}/git/ref/tags/${tag}`) {
+        return reference;
+      }
+      if (path === `/repos/${repository}/git/tags/${tagSha}`) {
+        return signature;
+      }
+      throw new Error("Unexpected GitHub operation.");
+    },
+  );
 
   return {
     gitResultMap,

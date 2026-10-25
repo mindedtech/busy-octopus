@@ -33,10 +33,10 @@ busy-octopus agent setup claude-code
 
 Approve the new hooks:
 
-| Provider | Approval |
-| --- | --- |
-| Codex | Open `/hooks`, review the Busy Octopus hooks, and trust them. |
-| Claude Code | Accept the workspace trust prompt. |
+| Provider    | Approval                                                      |
+| ----------- | ------------------------------------------------------------- |
+| Codex       | Open `/hooks`, review the Busy Octopus hooks, and trust them. |
+| Claude Code | Accept the workspace trust prompt.                            |
 
 Run `busy-octopus agent setup --help` for attention notifications and other options.
 
@@ -82,14 +82,14 @@ The test notification uses the normal settings. Disable `busyOctopus.focusSuppre
 
 ## Settings
 
-| Setting | Default | Effect when enabled |
-| --- | --- | --- |
-| `busyOctopus.editor.enable` | `false` | Show notifications in VS Code. |
-| `busyOctopus.focusSuppression.enable` | `true` | Suppress notifications while the target workspace window has focus. |
-| `busyOctopus.detail.enable` | `true` | Include notification details. |
-| `busyOctopus.windows.notification.enable` | `true` | Show native Windows notifications. |
-| `busyOctopus.windows.notification.sound.enable` | `false` | Play the default Windows notification sound. |
-| `busyOctopus.windows.taskbar.flash.enable` | `true` | Flash the workspace taskbar button on Windows. |
+| Setting                                         | Default | Effect when enabled                                                 |
+| ----------------------------------------------- | ------- | ------------------------------------------------------------------- |
+| `busyOctopus.editor.enable`                     | `false` | Show notifications in VS Code.                                      |
+| `busyOctopus.focusSuppression.enable`           | `true`  | Suppress notifications while the target workspace window has focus. |
+| `busyOctopus.detail.enable`                     | `true`  | Include notification details.                                       |
+| `busyOctopus.windows.notification.enable`       | `true`  | Show native Windows notifications.                                  |
+| `busyOctopus.windows.notification.sound.enable` | `false` | Play the default Windows notification sound.                        |
+| `busyOctopus.windows.taskbar.flash.enable`      | `true`  | Flash the workspace taskbar button on Windows.                      |
 
 On Windows, clicking a native notification opens its workspace, including WSL and Dev Container workspaces. Taskbar flashing can target a window after it has received focus once during the extension session.
 
@@ -101,20 +101,20 @@ Notifications are not consumed in Restricted Mode or virtual workspaces.
 
 Completion notifications are configured by default:
 
-| Provider | Event | Details |
-| --- | --- | --- |
-| Codex | `Stop` | Final response, when available. |
-| Claude Code | `Stop` | Final response, when available. |
-| Claude Code | `StopFailure` | Turn stopped with an error. |
+| Provider    | Event         | Details                         |
+| ----------- | ------------- | ------------------------------- |
+| Codex       | `Stop`        | Final response, when available. |
+| Claude Code | `Stop`        | Final response, when available. |
+| Claude Code | `StopFailure` | Turn stopped with an error.     |
 
 The `--enable-attention` setup option adds:
 
-| Provider | Event | Message |
-| --- | --- | --- |
-| Codex | `PreToolUse` for `request_user_input` or `request_user_input_async` | Input required. |
-| Claude Code | `PreToolUse` for `AskUserQuestion` | Input required. |
-| Claude Code | `Notification` for `permission_prompt` | Approval required. |
-| Claude Code | Elicitation and agent-input notifications | Input required. |
+| Provider    | Event                                                               | Message            |
+| ----------- | ------------------------------------------------------------------- | ------------------ |
+| Codex       | `PreToolUse` for `request_user_input` or `request_user_input_async` | Input required.    |
+| Claude Code | `PreToolUse` for `AskUserQuestion`                                  | Input required.    |
+| Claude Code | `Notification` for `permission_prompt`                              | Approval required. |
+| Claude Code | Elicitation and agent-input notifications                           | Input required.    |
 
 Setup preserves unrelated settings and hooks. Its project configuration files may be committed, but every user still needs `busy-octopus` on the agent's `PATH`.
 
@@ -124,10 +124,10 @@ Provider documentation: [Codex hooks](https://learn.chatgpt.com/docs/hooks) and 
 
 The wrapped command keeps its output and exit status. Notification errors do not change its result.
 
-| Option | Notification content |
-| --- | --- |
+| Option       | Notification content                           |
+| ------------ | ---------------------------------------------- |
 | `-H, --head` | Complete lines from the start, earliest first. |
-| `-T, --tail` | Complete lines from the end, latest first. |
+| `-T, --tail` | Complete lines from the end, latest first.     |
 
 Output is limited to 1,024 characters; a single long line uses its prefix or suffix. The output options are mutually exclusive. Without either option, command output is not included in the notification. Use `-s, --success-only` or `-f, --failure-only` to restrict notifications.
 

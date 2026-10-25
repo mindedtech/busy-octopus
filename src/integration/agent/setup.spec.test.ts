@@ -18,6 +18,8 @@ import { ClaudeCodeConfig } from "./claude-code/config.js";
 import { CodexConfig } from "./codex/config.js";
 import { setupAgent } from "./setup.js";
 
+type AgentSetup = Parameters<typeof setupAgent>[0];
+
 let fixtureDirectory: string;
 
 beforeEach(async () => {
@@ -30,7 +32,7 @@ afterEach(async () => {
 
 describe("setupAgent", () => {
   it("creates a Codex configuration after confirmation", async () => {
-    const confirm = vi.fn().mockResolvedValue(true);
+    const confirm = vi.fn<AgentSetup["confirm"]>().mockResolvedValue(true);
 
     await expect(
       setupAgent({
@@ -79,7 +81,7 @@ describe("setupAgent", () => {
       provider: "claude-code",
       skillText: null,
     });
-    const confirm = vi.fn().mockResolvedValue(true);
+    const confirm = vi.fn<AgentSetup["confirm"]>().mockResolvedValue(true);
     const skillText = "synthetic skill\n";
     const { path: workspacePath } = await resolveWorkspace({
       directory: fixtureDirectory,
@@ -140,7 +142,7 @@ describe("setupAgent", () => {
     });
     const path = join(fixtureDirectory, ".claude", "settings.json");
     const configText = await readFile(path, "utf8");
-    const confirm = vi.fn();
+    const confirm = vi.fn<AgentSetup["confirm"]>();
 
     await expect(
       setupAgent({
@@ -238,7 +240,7 @@ describe("setupAgent", () => {
   it("rejects configuration beyond the byte limit", async () => {
     const directory = join(fixtureDirectory, ".codex");
     const path = join(directory, "hooks.json");
-    const confirm = vi.fn();
+    const confirm = vi.fn<AgentSetup["confirm"]>();
     await mkdir(directory);
     await writeFile(path, JSON.stringify({ value: "x".repeat(1_048_577) }));
 
@@ -268,7 +270,7 @@ describe("setupAgent", () => {
         directory: fixtureDirectory,
         provider: "codex",
       }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(SyntaxError);
     await expect(readFile(path, "utf8")).resolves.toBe("{");
   });
 });

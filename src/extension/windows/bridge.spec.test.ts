@@ -3,10 +3,11 @@
  */
 
 import type {
-  ExecFileOptionsWithStringEncoding,
   execFile,
+  ExecFileOptionsWithStringEncoding,
 } from "node:child_process";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ZodError } from "zod";
 import {
   captureEditorWindow,
   EditorProcessId,
@@ -17,10 +18,11 @@ import {
   type WindowCapture,
 } from "./bridge.js";
 
+type ExecFile = typeof execFile;
 type ExecFileAsync = typeof execFile.__promisify__;
 
 const processMock = vi.hoisted(() => {
-  const execFile = vi.fn(() => undefined);
+  const execFile = vi.fn<ExecFile>();
   const execFileAsync = vi.fn<ExecFileAsync>();
 
   Object.defineProperty(execFile, Symbol.for("nodejs.util.promisify.custom"), {
@@ -83,7 +85,7 @@ describe("Windows PowerShell bridge", () => {
 
     await expect(
       captureEditorWindow({ editorProcessId, scriptPath }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(ZodError);
   });
 
   it("parses a captured window handle", async () => {

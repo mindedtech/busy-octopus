@@ -3,7 +3,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import {
   createNotificationRequest,
   MAXIMUM_NOTIFICATION_REQUEST_BYTE_COUNT,
@@ -101,7 +101,7 @@ describe("createNotificationRequest", () => {
       integrationPayload: "synthetic",
     };
 
-    expect(() => createNotificationRequest(input)).toThrow();
+    expect(() => createNotificationRequest(input)).toThrow(ZodError);
   });
 });
 
@@ -265,7 +265,7 @@ describe("NotificationRequestJson", () => {
     ["primitive", "42"],
     ["null", "null"],
   ])("rejects a raw JSON %s", (_domain, input) => {
-    expect(() => NotificationRequestJson.decode(input)).toThrow();
+    expect(() => NotificationRequestJson.decode(input)).toThrow(ZodError);
   });
 
   it("returns a content-free error for malformed JSON", () => {
@@ -303,8 +303,10 @@ describe("NotificationRequestJson", () => {
       MAXIMUM_NOTIFICATION_REQUEST_BYTE_COUNT + 1,
     );
 
-    expect(() => NotificationRequest.parse(request)).toThrow();
-    expect(() => NotificationRequestJson.encode(request)).toThrow();
+    const message = `Notification request must not exceed ${MAXIMUM_NOTIFICATION_REQUEST_BYTE_COUNT} UTF-8 bytes.`;
+
+    expect(() => NotificationRequest.parse(request)).toThrow(message);
+    expect(() => NotificationRequestJson.encode(request)).toThrow(message);
   });
 
   it("checks raw size before parsing malformed JSON", () => {

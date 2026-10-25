@@ -6,22 +6,22 @@
 
 import {
   commands,
-  type ExtensionContext,
   env,
+  type ExtensionContext,
   Uri,
-  type WorkspaceFolder,
   window,
   workspace,
+  type WorkspaceFolder,
 } from "vscode";
 import { createNotificationRequest } from "../protocol/notification.js";
 import { WorkspaceContext, WorkspaceLabel } from "../protocol/workspace.js";
 import { NotificationQueue } from "../queue/queue.js";
 import { identifyWorkspace } from "../workspace/identity.js";
 import { resolveWorkspaceQueue } from "../workspace/queue.js";
+import type { NotificationDeliveryAdapter } from "./delivery/adapter.js";
 import { EditorNotificationAdapter } from "./delivery/adapter/editor.js";
 import { WindowsNotificationAdapter } from "./delivery/adapter/windows/notification.js";
 import { WindowsTaskbarAdapter } from "./delivery/adapter/windows/taskbar.js";
-import type { NotificationDeliveryAdapter } from "./delivery/adapter.js";
 import {
   NotificationDeliveryConfig,
   type NotificationDeliveryConfigInput,
@@ -215,7 +215,7 @@ export const activate = (context: ExtensionContext): void => {
 
   const fileSystem = new WorkspaceQueueFileSystem({
     fileSystem: workspace.fs,
-    join: Uri.joinPath,
+    join: (directory, name) => Uri.joinPath(directory, name),
   });
 
   const consumer = new ExtensionWorkspaceConsumer({
@@ -231,7 +231,10 @@ export const activate = (context: ExtensionContext): void => {
           }),
         queue: createWorkspaceQueue({ fileSystem, folder }),
         schedule: (callback, intervalMilliseconds) => {
-          const timer = setInterval(callback, intervalMilliseconds);
+          const timer = setInterval(
+            () => void callback(),
+            intervalMilliseconds,
+          );
 
           return { dispose: () => clearInterval(timer) };
         },

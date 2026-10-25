@@ -5,8 +5,8 @@
 import { assert, expect } from "chai";
 import { stub } from "sinon";
 import {
-  ConfigurationTarget,
   commands,
+  ConfigurationTarget,
   extensions,
   window,
   workspace,
@@ -33,7 +33,7 @@ suite("Editor notification delivery", () => {
     const showInformationMessage = stub(
       window,
       "showInformationMessage",
-    ).resolves(undefined);
+    ).resolves();
 
     try {
       await commands.executeCommand("busyOctopus.showTestNotification");

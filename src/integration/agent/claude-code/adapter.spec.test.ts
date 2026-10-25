@@ -3,6 +3,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { ZodError } from "zod";
 import type { NotifyInput } from "../../../library/notify.js";
 import { type ClaudeCodeHook, claudeCodeHookAdapter } from "./adapter.js";
 
@@ -151,7 +152,7 @@ describe("claudeCodeHookAdapter", () => {
         message: "Synthetic notification.",
         notification_type: "idle_prompt",
       }),
-    ).toThrow();
+    ).toThrow(ZodError);
   });
 
   it("returns no Claude Code output", () => {

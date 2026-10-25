@@ -20,11 +20,11 @@ const readStep = (name: string): string => {
   const block = workflow
     .split(`      - name: ${name}\n`)[1]
     ?.split("\n      - name:")[0];
-  const script = block?.match(/^ {8}run: \|\n((?: {10}.*\n|\n)*)/m)?.[1];
+  const script = block?.match(/^ {8}run: \|\n((?: {10}.*\n|\n)*)/mu)?.[1];
   if (script !== undefined) {
-    return script.replace(/^ {10}/gm, "");
+    return script.replaceAll(/^ {10}/gmu, "");
   }
-  const command = block?.match(/^ {8}run: (.+)$/m)?.[1];
+  const command = block?.match(/^ {8}run: (.+)$/mu)?.[1];
   assert.isDefined(command);
   return command;
 };
@@ -199,11 +199,11 @@ it("orders publishers and keeps downloads bound to the original artifact", () =>
   );
   expect(
     workflow.match(
-      /artifact-ids: \$\{\{ needs.package.outputs.artifact-id \}\}/g,
+      /artifact-ids: \$\{\{ needs.package.outputs.artifact-id \}\}/gu,
     ),
   ).toHaveLength(3);
   expect(workflow).toMatch(
-    /artifact-id: \$\{\{ steps.artifact.outputs.artifact-id \}\}/,
+    /artifact-id: \$\{\{ steps.artifact.outputs.artifact-id \}\}/u,
   );
   expect(workflow.indexOf("name: Confirm npm publication")).toBeLessThan(
     workflow.indexOf("name: Publish VS Code extension"),

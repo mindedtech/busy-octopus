@@ -14,6 +14,10 @@ import type {
 import type { NotificationDeliveryConfig } from "./config.js";
 import { NotificationDeliveryDispatcher } from "./dispatcher.js";
 
+type DispatcherInput = ConstructorParameters<
+  typeof NotificationDeliveryDispatcher
+>[0];
+
 const request = createNotificationRequest({
   body: "Review the result.",
   notificationId: "synthetic-notification",
@@ -65,10 +69,18 @@ describe("NotificationDeliveryDispatcher", () => {
         title: "Codex",
         workspace: { ...request.workspace, display },
       } satisfies NotificationRequest;
-      const deliver = vi.fn().mockResolvedValue(undefined);
+      const deliver = vi
+        .fn<NotificationDeliveryAdapter["deliver"]>()
+        .mockResolvedValue();
       const dispatcher = new NotificationDeliveryDispatcher({
-        adapterList: [{ allow: () => true, deliver, dispose: vi.fn() }],
-        diagnose: vi.fn(),
+        adapterList: [
+          {
+            allow: () => true,
+            deliver,
+            dispose: vi.fn<NotificationDeliveryAdapter["dispose"]>(),
+          },
+        ],
+        diagnose: vi.fn<DispatcherInput["diagnose"]>(),
         readConfig: () => config,
         readFocus: () => false,
       });
@@ -96,10 +108,18 @@ describe("NotificationDeliveryDispatcher", () => {
       title: "Input required.",
     } satisfies NotificationRequest;
     const deliveryConfig = { ...config, detail: { enable: false } };
-    const deliver = vi.fn().mockResolvedValue(undefined);
+    const deliver = vi
+      .fn<NotificationDeliveryAdapter["deliver"]>()
+      .mockResolvedValue();
     const dispatcher = new NotificationDeliveryDispatcher({
-      adapterList: [{ allow: () => true, deliver, dispose: vi.fn() }],
-      diagnose: vi.fn(),
+      adapterList: [
+        {
+          allow: () => true,
+          deliver,
+          dispose: vi.fn<NotificationDeliveryAdapter["dispose"]>(),
+        },
+      ],
+      diagnose: vi.fn<DispatcherInput["diagnose"]>(),
       readConfig: () => deliveryConfig,
       readFocus: () => false,
     });
@@ -120,17 +140,25 @@ describe("NotificationDeliveryDispatcher", () => {
   });
 
   it("continues after an adapter fails", async () => {
-    const diagnose = vi.fn();
-    const readConfig = vi.fn(() => config);
-    const deliver = vi.fn().mockResolvedValue(undefined);
+    const diagnose = vi.fn<DispatcherInput["diagnose"]>();
+    const readConfig = vi.fn<DispatcherInput["readConfig"]>(() => config);
+    const deliver = vi
+      .fn<NotificationDeliveryAdapter["deliver"]>()
+      .mockResolvedValue();
     const dispatcher = new NotificationDeliveryDispatcher({
       adapterList: [
         {
           allow: () => true,
-          deliver: vi.fn().mockRejectedValue(new Error("synthetic failure")),
-          dispose: vi.fn(),
+          deliver: vi
+            .fn<NotificationDeliveryAdapter["deliver"]>()
+            .mockRejectedValue(new Error("synthetic failure")),
+          dispose: vi.fn<NotificationDeliveryAdapter["dispose"]>(),
         },
-        { allow: () => true, deliver, dispose: vi.fn() },
+        {
+          allow: () => true,
+          deliver,
+          dispose: vi.fn<NotificationDeliveryAdapter["dispose"]>(),
+        },
       ],
       diagnose,
       readConfig,
@@ -151,14 +179,16 @@ describe("NotificationDeliveryDispatcher", () => {
   });
 
   it("does not report successful adapter delivery as a failure", async () => {
-    const diagnose = vi.fn();
-    const readConfig = vi.fn(() => config);
+    const diagnose = vi.fn<DispatcherInput["diagnose"]>();
+    const readConfig = vi.fn<DispatcherInput["readConfig"]>(() => config);
     const dispatcher = new NotificationDeliveryDispatcher({
       adapterList: [
         {
           allow: () => true,
-          deliver: vi.fn().mockResolvedValue(undefined),
-          dispose: vi.fn(),
+          deliver: vi
+            .fn<NotificationDeliveryAdapter["deliver"]>()
+            .mockResolvedValue(),
+          dispose: vi.fn<NotificationDeliveryAdapter["dispose"]>(),
         },
       ],
       diagnose,
@@ -177,11 +207,19 @@ describe("NotificationDeliveryDispatcher", () => {
   });
 
   it("suppresses routine delivery while the editor has focus", async () => {
-    const allow = vi.fn(() => true);
-    const deliver = vi.fn().mockResolvedValue(undefined);
+    const allow = vi.fn<NotificationDeliveryAdapter["allow"]>(() => true);
+    const deliver = vi
+      .fn<NotificationDeliveryAdapter["deliver"]>()
+      .mockResolvedValue();
     const dispatcher = new NotificationDeliveryDispatcher({
-      adapterList: [{ allow, deliver, dispose: vi.fn() }],
-      diagnose: vi.fn(),
+      adapterList: [
+        {
+          allow,
+          deliver,
+          dispose: vi.fn<NotificationDeliveryAdapter["dispose"]>(),
+        },
+      ],
+      diagnose: vi.fn<DispatcherInput["diagnose"]>(),
       readConfig: () => config,
       readFocus: () => true,
     });
@@ -197,10 +235,18 @@ describe("NotificationDeliveryDispatcher", () => {
   });
 
   it("allows explicit focus suppression opt-out", async () => {
-    const deliver = vi.fn().mockResolvedValue(undefined);
+    const deliver = vi
+      .fn<NotificationDeliveryAdapter["deliver"]>()
+      .mockResolvedValue();
     const dispatcher = new NotificationDeliveryDispatcher({
-      adapterList: [{ allow: () => true, deliver, dispose: vi.fn() }],
-      diagnose: vi.fn(),
+      adapterList: [
+        {
+          allow: () => true,
+          deliver,
+          dispose: vi.fn<NotificationDeliveryAdapter["dispose"]>(),
+        },
+      ],
+      diagnose: vi.fn<DispatcherInput["diagnose"]>(),
       readConfig: () => ({ ...config, focusSuppression: { enable: false } }),
       readFocus: () => true,
     });
@@ -217,10 +263,18 @@ describe("NotificationDeliveryDispatcher", () => {
   });
 
   it("removes details before adapter delivery", async () => {
-    const deliver = vi.fn().mockResolvedValue(undefined);
+    const deliver = vi
+      .fn<NotificationDeliveryAdapter["deliver"]>()
+      .mockResolvedValue();
     const dispatcher = new NotificationDeliveryDispatcher({
-      adapterList: [{ allow: () => true, deliver, dispose: vi.fn() }],
-      diagnose: vi.fn(),
+      adapterList: [
+        {
+          allow: () => true,
+          deliver,
+          dispose: vi.fn<NotificationDeliveryAdapter["dispose"]>(),
+        },
+      ],
+      diagnose: vi.fn<DispatcherInput["diagnose"]>(),
       readConfig: () => ({ ...config, detail: { enable: false } }),
       readFocus: () => false,
     });
@@ -237,10 +291,18 @@ describe("NotificationDeliveryDispatcher", () => {
   });
 
   it("sanitizes content before adapter delivery", async () => {
-    const deliver = vi.fn().mockResolvedValue(undefined);
+    const deliver = vi
+      .fn<NotificationDeliveryAdapter["deliver"]>()
+      .mockResolvedValue();
     const dispatcher = new NotificationDeliveryDispatcher({
-      adapterList: [{ allow: () => true, deliver, dispose: vi.fn() }],
-      diagnose: vi.fn(),
+      adapterList: [
+        {
+          allow: () => true,
+          deliver,
+          dispose: vi.fn<NotificationDeliveryAdapter["dispose"]>(),
+        },
+      ],
+      diagnose: vi.fn<DispatcherInput["diagnose"]>(),
       readConfig: () => config,
       readFocus: () => false,
     });
@@ -249,7 +311,7 @@ describe("NotificationDeliveryDispatcher", () => {
     await dispatcher.deliver({
       notification: {
         ...request,
-        body: "Review\n\u202ethe result.",
+        body: "Review\n\u202Ethe result.",
         title: "Agent\tfinished",
       },
       signal,
@@ -269,11 +331,19 @@ describe("NotificationDeliveryDispatcher", () => {
   });
 
   it("does not deliver through an adapter that rejects config", async () => {
-    const allow = vi.fn(() => false);
-    const deliver = vi.fn().mockResolvedValue(undefined);
+    const allow = vi.fn<NotificationDeliveryAdapter["allow"]>(() => false);
+    const deliver = vi
+      .fn<NotificationDeliveryAdapter["deliver"]>()
+      .mockResolvedValue();
     const dispatcher = new NotificationDeliveryDispatcher({
-      adapterList: [{ allow, deliver, dispose: vi.fn() }],
-      diagnose: vi.fn(),
+      adapterList: [
+        {
+          allow,
+          deliver,
+          dispose: vi.fn<NotificationDeliveryAdapter["dispose"]>(),
+        },
+      ],
+      diagnose: vi.fn<DispatcherInput["diagnose"]>(),
       readConfig: () => config,
       readFocus: () => false,
     });
@@ -286,16 +356,18 @@ describe("NotificationDeliveryDispatcher", () => {
   });
 
   it("reads fresh config for each notification", async () => {
-    const readConfig = vi.fn(() => config);
+    const readConfig = vi.fn<DispatcherInput["readConfig"]>(() => config);
     const dispatcher = new NotificationDeliveryDispatcher({
       adapterList: [
         {
           allow: () => true,
-          deliver: vi.fn().mockResolvedValue(undefined),
-          dispose: vi.fn(),
+          deliver: vi
+            .fn<NotificationDeliveryAdapter["deliver"]>()
+            .mockResolvedValue(),
+          dispose: vi.fn<NotificationDeliveryAdapter["dispose"]>(),
         },
       ],
-      diagnose: vi.fn(),
+      diagnose: vi.fn<DispatcherInput["diagnose"]>(),
       readConfig,
       readFocus: () => false,
     });
@@ -309,10 +381,18 @@ describe("NotificationDeliveryDispatcher", () => {
 
   it("reports and propagates config failure", async () => {
     const failure = new Error("synthetic failure");
-    const deliver = vi.fn().mockResolvedValue(undefined);
-    const diagnose = vi.fn();
+    const deliver = vi
+      .fn<NotificationDeliveryAdapter["deliver"]>()
+      .mockResolvedValue();
+    const diagnose = vi.fn<DispatcherInput["diagnose"]>();
     const dispatcher = new NotificationDeliveryDispatcher({
-      adapterList: [{ allow: () => true, deliver, dispose: vi.fn() }],
+      adapterList: [
+        {
+          allow: () => true,
+          deliver,
+          dispose: vi.fn<NotificationDeliveryAdapter["dispose"]>(),
+        },
+      ],
       diagnose,
       readConfig: () => {
         throw failure;
@@ -333,14 +413,19 @@ describe("NotificationDeliveryDispatcher", () => {
   });
 
   it("disposes every adapter", () => {
-    const disposeList = [vi.fn(), vi.fn()];
+    const disposeList = [
+      vi.fn<NotificationDeliveryAdapter["dispose"]>(),
+      vi.fn<NotificationDeliveryAdapter["dispose"]>(),
+    ];
     const dispatcher = new NotificationDeliveryDispatcher({
       adapterList: disposeList.map((dispose) => ({
         allow: () => true,
-        deliver: vi.fn().mockResolvedValue(undefined),
+        deliver: vi
+          .fn<NotificationDeliveryAdapter["deliver"]>()
+          .mockResolvedValue(),
         dispose,
       })),
-      diagnose: vi.fn(),
+      diagnose: vi.fn<DispatcherInput["diagnose"]>(),
       readConfig: () => config,
       readFocus: () => false,
     });
@@ -354,18 +439,26 @@ describe("NotificationDeliveryDispatcher", () => {
 
   it("propagates adapter policy failures", async () => {
     const failure = new Error("synthetic failure");
-    const deliver = vi.fn().mockResolvedValue(undefined);
-    const diagnose = vi.fn();
+    const deliver = vi
+      .fn<NotificationDeliveryAdapter["deliver"]>()
+      .mockResolvedValue();
+    const diagnose = vi.fn<DispatcherInput["diagnose"]>();
     const dispatcher = new NotificationDeliveryDispatcher({
       adapterList: [
         {
           allow: () => {
             throw failure;
           },
-          deliver: vi.fn().mockResolvedValue(undefined),
-          dispose: vi.fn(),
+          deliver: vi
+            .fn<NotificationDeliveryAdapter["deliver"]>()
+            .mockResolvedValue(),
+          dispose: vi.fn<NotificationDeliveryAdapter["dispose"]>(),
         },
-        { allow: () => true, deliver, dispose: vi.fn() },
+        {
+          allow: () => true,
+          deliver,
+          dispose: vi.fn<NotificationDeliveryAdapter["dispose"]>(),
+        },
       ],
       diagnose,
       readConfig: () => config,

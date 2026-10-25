@@ -4,7 +4,7 @@
 
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { type ZodType, z } from "zod";
+import { z, type ZodType } from "zod";
 
 const execFileAsync = promisify(execFile);
 const maximumOutputByteCount = 16_384;
@@ -21,7 +21,7 @@ export type EditorProcessId = z.infer<typeof EditorProcessId>;
 
 export const EditorWindowHandle = z
   .string()
-  .regex(/^[1-9]\d*$/)
+  .regex(/^[1-9]\d*$/u)
   .brand("EditorWindowHandle")
   .describe("Windows editor window handle.");
 export type EditorWindowHandle = z.infer<typeof EditorWindowHandle>;

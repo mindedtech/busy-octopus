@@ -5,6 +5,7 @@
 import { ok, strictEqual } from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { appendFile } from "node:fs/promises";
+import type { ReadableStreamDefaultReader } from "node:stream/web";
 import { promisify } from "node:util";
 import { z } from "zod";
 import { packageManifest, publicationEnabled } from "../package/metadata.ts";
@@ -60,7 +61,8 @@ const readGitHubJson = async (path: string): Promise<unknown> => {
   ok(response.ok, `GitHub returned status ${response.status}.`);
 
   ok(response.body !== null, "GitHub returned an empty response.");
-  const reader = response.body.getReader();
+  const reader: ReadableStreamDefaultReader<unknown> =
+    response.body.getReader();
   const chunkList: Uint8Array[] = [];
   let byteCount = 0;
 
@@ -70,6 +72,10 @@ const readGitHubJson = async (path: string): Promise<unknown> => {
       if (done) {
         break;
       }
+      ok(
+        value instanceof Uint8Array,
+        "GitHub returned a non-byte response chunk.",
+      );
       byteCount += value.byteLength;
       ok(
         byteCount <= 1_048_576,

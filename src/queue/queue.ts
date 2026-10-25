@@ -255,7 +255,7 @@ export class NotificationQueuePublisher<Resource = string> {
         ok(false, "Temporary queue request disappeared before publication.");
       }
     } catch (error: unknown) {
-      await this.#fileSystem.remove(temporaryPath).catch(() => undefined);
+      await this.#fileSystem.remove(temporaryPath).catch(() => {});
       throw error;
     }
   };

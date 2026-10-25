@@ -14,17 +14,21 @@ vi.mock("vscode", () => ({
   FileType: { Directory: 2, File: 1 },
 }));
 
-const createFileSystem = (): WorkspaceFileSystem<string> => ({
-  createDirectory: vi.fn(),
-  delete: vi.fn(),
-  readDirectory: vi.fn().mockResolvedValue([]),
-  readFile: vi.fn().mockResolvedValue(new Uint8Array()),
-  rename: vi.fn(),
-  stat: vi.fn().mockResolvedValue({ mtime: 10, size: 0, type: FileType.File }),
-  writeFile: vi.fn(),
+type FileSystem = WorkspaceFileSystem<string>;
+
+const createFileSystem = (): FileSystem => ({
+  createDirectory: vi.fn<FileSystem["createDirectory"]>(),
+  delete: vi.fn<FileSystem["delete"]>(),
+  readDirectory: vi.fn<FileSystem["readDirectory"]>().mockResolvedValue([]),
+  readFile: vi.fn<FileSystem["readFile"]>().mockResolvedValue(new Uint8Array()),
+  rename: vi.fn<FileSystem["rename"]>(),
+  stat: vi
+    .fn<FileSystem["stat"]>()
+    .mockResolvedValue({ mtime: 10, size: 0, type: FileType.File }),
+  writeFile: vi.fn<FileSystem["writeFile"]>(),
 });
 
-const createQueue = (fileSystem: WorkspaceFileSystem<string>) =>
+const createQueue = (fileSystem: FileSystem) =>
   new WorkspaceQueueFileSystem({
     fileSystem,
     join: (directory, name) => `${directory}/${name}`,

@@ -1,12 +1,12 @@
 allowBuilds:
-  '@vscode/vsce-sign': false
+  "@vscode/vsce-sign": false
   esbuild: true
   keytar: false
 engineStrict: true
 minimumReleaseAge: 1440
 minimumReleaseAgeStrict: true
 overrides:
-  '@azure/identity>@azure/msal-node': 7.1.1
+  "@azure/identity>@azure/msal-node": 7.1.1
   mocha>diff: 8.0.4
   mocha>serialize-javascript: 7.1.3
 preferSymlinkedExecutables: true

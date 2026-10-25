@@ -2,14 +2,16 @@
  * @file Verify agent setup command options.
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { assert, beforeEach, describe, expect, it, vi } from "vitest";
+import type { setupAgent } from "../../integration/agent/setup.js";
 import { runTestCli } from "../test.js";
+import type { loadAgentSkillText } from "./content.js";
 
 const agentSkillText = "# Busy Octopus\n";
 
 const { loadSkill, setup } = vi.hoisted(() => ({
-  loadSkill: vi.fn(),
-  setup: vi.fn(),
+  loadSkill: vi.fn<typeof loadAgentSkillText>(),
+  setup: vi.fn<typeof setupAgent>(),
 }));
 
 vi.mock("./content.js", () => ({ loadAgentSkillText: loadSkill }));
@@ -42,8 +44,12 @@ describe("agent setup", () => {
       stderr: "",
       stdout: "configured\n",
     });
-    expect(setup).toHaveBeenCalledWith({
-      confirm: expect.any(Function),
+    expect(setup).toHaveBeenCalledOnce();
+    const { lastCall } = setup.mock;
+    assert(lastCall !== undefined, "Agent setup must be called.");
+    const [{ confirm, ...input }] = lastCall;
+    expect(confirm).toBeTypeOf("function");
+    expect(input).toEqual({
       enableAttention: false,
       provider: "codex",
       skillText,

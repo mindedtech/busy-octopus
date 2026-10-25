@@ -3,21 +3,20 @@
     "vscode": {
       "extensions": [
         "Anthropic.claude-code",
-        "biomejs.biome",
         "github.vscode-github-actions",
         "openai.chatgpt",
+        "oxc.oxc-vscode",
         "redhat.vscode-yaml",
         "TypeScriptTeam.native-preview",
         "timonwong.shellcheck"
       ],
       "settings": {
-        "[javascript][javascriptreact][json][jsonc][typescript][typescriptreact]": {
-          "editor.defaultFormatter": "biomejs.biome",
+        "[javascript][javascriptreact][json][jsonc][markdown][typescript][typescriptreact][yaml]": {
+          "editor.defaultFormatter": "oxc.oxc-vscode",
           "editor.formatOnSave": true
         },
         "editor.codeActionsOnSave": {
-          "source.fixAll.biome": "explicit",
-          "source.organizeImports.biome": "explicit"
+          "source.fixAll.oxc": "explicit"
         },
         "files.exclude": {
           ".pnpm-store": true

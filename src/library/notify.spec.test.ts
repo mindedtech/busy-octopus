@@ -183,7 +183,7 @@ describe("notify", () => {
 
     await expect(
       notify({ body: null, directory, source: null, title: " " }),
-    ).rejects.toThrow();
+    ).rejects.toThrow("Notification title must not be blank.");
     await expect(
       nativeQueueFileSystem.list(queueDirectory, 1),
     ).rejects.toMatchObject({
