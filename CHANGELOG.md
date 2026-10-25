@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Claude Code turn notifications no longer arrive while a background subagent or workflow is still running.
+
 ## 0.1.4
 
 ### Fixed

@@ -26,6 +26,8 @@ Do not share prompts, agent output, hook payloads, queue files, credentials, or 
 - Find the hook error output in the agent transcript or hook log.
 - A line that starts with `busy-octopus: unable to process the agent hook:` names the failure type and the hook fields that failed validation.
 - This line contains no hook content. You can include it in a bug report.
+- In Claude Code, a turn that ends while a background subagent or workflow is still running sends no notification. The turn that starts after the last of them finishes sends it.
+- A background subagent waiting for a permission prompt sends no notification until it continues. Run setup with `--enable-attention` to be notified of approval requests.
 
 ## VS Code does not consume notifications
 
